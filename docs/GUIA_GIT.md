@@ -7,13 +7,19 @@ Las reglas completas están en [REGLAS.md](REGLAS.md). Esto es el paso a paso.
 ```bash
 git clone https://github.com/BabyPop666/Kepler7.git
 cd Kepler7
-git config user.name  "Tu Nombre"
-git config user.email "el-mail-de-tu-cuenta-de-github"
 dotnet build Kepler7.sln
 dotnet test
 ```
 
-El mail tiene que ser el de **tu** cuenta de GitHub; si no, tus commits no aparecen a tu nombre en el repo.
+## Identidad en la PC compartida
+
+Trabajamos todos desde la misma PC, así que la identidad se pone **en cada commit**, no en la configuración (si no, queda pegada la del último que la usó):
+
+```bash
+git -c user.name="Tu Nombre" -c user.email="el-mail-de-tu-cuenta-de-github" commit -m "feat(...): ..."
+```
+
+El mail tiene que ser el de **tu** cuenta de GitHub; si no, tus commits no aparecen a tu nombre en el repo. Antes de pushear, revisá con `git log -3 --format="%an %ae %s"` que el autor sea el correcto.
 
 ## Cada vez que trabajás
 
@@ -48,7 +54,7 @@ Ejemplos: `feat(proxy): registra intentos denegados`, `test(state): cubre transi
 
 ## Reglas de oro
 
-- Cada uno commitea **su** trabajo desde **su** cuenta. Si dos trabajaron juntos, el mensaje lleva al final `Co-authored-by: Nombre <email>`.
+- Cada uno commitea **su** trabajo con **su** identidad. Si dos trabajaron juntos, el mensaje lleva al final `Co-authored-by: Nombre <email>`.
 - Nunca `git push --force` sobre `main`.
 - Si `main` avanzó mientras trabajabas: `git switch main && git pull && git switch tu-rama && git merge main`, resolvés conflictos y seguís.
 - PRs chicos (un patrón, una pantalla) se revisan rápido; PRs gigantes se traban.

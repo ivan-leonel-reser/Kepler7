@@ -46,8 +46,8 @@ Kepler7.sln
 
 ## Git - reglas del equipo
 
-- **El autor de un commit es quien hizo ese trabajo.** Cada integrante commitea desde su propia cuenta y su propio clon.
-- Nadie commitea a nombre de otro (nada de `--author` ni de cambiar `user.name`/`user.email`). Si dos trabajaron juntos, se agrega `Co-authored-by: Nombre <email>`.
+- **El autor de un commit es quien hizo ese trabajo.** Compartimos una PC de desarrollo, así que cada uno commitea con su nombre y el mail de su cuenta de GitHub cuando le toca trabajar (ver [GUIA_GIT.md](GUIA_GIT.md)).
+- Nadie commitea a nombre de otro. Si dos trabajaron juntos, se agrega `Co-authored-by: Nombre <email>`.
 - `main` siempre compila y pasa los tests. No se pushea directo a `main` (salvo el setup inicial): rama + PR + aprobación de **otro** integrante.
 - Ramas: `feature/<patron-o-tema>`, `fix/<tema>`, `docs/<tema>`. Ej.: `feature/chain-defensas`.
 - Commits chicos y significativos, en español, estilo Conventional Commits: `feat(builder): agrega RecetaCarga`, `test(proxy): cubre acceso denegado`, `docs(uml): diagrama de State`.
