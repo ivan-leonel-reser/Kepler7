@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kepler7.Core\Kepler7.Core.csproj" />
+    <ProjectReference Include="..\Kepler7.Data\Kepler7.Data.csproj" />
+  </ItemGroup>
+
+</Project>
