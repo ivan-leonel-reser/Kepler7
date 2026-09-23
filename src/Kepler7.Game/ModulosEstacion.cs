@@ -16,14 +16,14 @@ internal static class ModulosEstacion
 {
     public static IReadOnlyList<ModuloEstacion> Todos { get; } =
     [
-        new("Hangar", Patron.Builder, "Ensamblá la nave de apoyo para la próxima misión.", null),
-        new("Laboratorio", Patron.Prototype, "Cloná tripulantes para completar el escuadrón.", null),
-        new("Comunicaciones", Patron.Bridge, "Enviá mensajes cifrados a la Tierra.", null),
+        new("Hangar", Patron.Builder, "Armá la nave de apoyo para la próxima oleada.", null),
+        new("Censo", Patron.Flyweight, "Reclutá tripulantes entre los 10.000 de la estación.", null),
+        new("Laboratorio", Patron.Prototype, "Cloná a un soldado para sumarlo al escuadrón.", null),
+        new("Comunicaciones", Patron.Bridge, "Pedí refuerzos a la Tierra con el cifrado que elijas.", null),
+        new("Bóveda", Patron.Proxy, "Leé el informe secreto sobre la próxima oleada.", null),
+        new("Almacén", Patron.Visitor, "Revisá y vendé el botín de las oleadas.", null),
+        new("Armería", Patron.ChainOfResponsibility, "Ordená las capas de defensa del escuadrón.", null),
         new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", null),
-        new("Censo", Patron.Flyweight, "Registro de los 10.000 tripulantes de la estación.", null),
-        new("Bóveda", Patron.Proxy, "Archivos reservados del Consejo de Ingeniería.", null),
-        new("Almacén", Patron.Visitor, "Analizá el botín recuperado en las misiones.", null),
-        new("Armería", Patron.ChainOfResponsibility, "Configurá las capas de defensa del escuadrón.", null),
     ];
 
     public static string NombrePatron(Patron patron) => patron switch

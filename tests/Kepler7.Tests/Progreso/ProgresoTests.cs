@@ -39,14 +39,18 @@ public class ProgresoTests
     }
 
     [TestMethod]
-    public void Sectores_NoPasanDelTotal()
+    public void Oleadas_LaEstacionSeSalvaAlSuperarLasSeis()
     {
         var progreso = new ProgresoJugador();
 
-        for (var i = 0; i < 10; i++)
-            progreso.RecuperarSector();
+        for (var i = 0; i < 5; i++)
+            progreso.SuperarOleada();
+        Assert.IsFalse(progreso.EstacionSalvada);
 
-        Assert.AreEqual(ProgresoJugador.SectoresTotales, progreso.SectoresRecuperados);
+        for (var i = 0; i < 5; i++)
+            progreso.SuperarOleada();
+        Assert.AreEqual(ProgresoJugador.OleadasTotales, progreso.OleadasSuperadas);
+        Assert.IsTrue(progreso.EstacionSalvada);
     }
 
     [TestMethod]
@@ -56,7 +60,7 @@ public class ProgresoTests
 
         Assert.AreEqual(3, progreso.Nivel);
         Assert.AreEqual(40, progreso.Creditos);
-        Assert.AreEqual(2, progreso.SectoresRecuperados);
+        Assert.AreEqual(2, progreso.OleadasSuperadas);
         Assert.IsTrue(progreso.TieneInsignia(Patron.Proxy));
     }
 

@@ -4,7 +4,7 @@ namespace Kepler7.Core.Progreso;
 public class ProgresoJugador
 {
     public const int XpPorNivel = 100;
-    public const int SectoresTotales = 6;
+    public const int OleadasTotales = 6;
 
     private readonly HashSet<Patron> _insignias = [];
 
@@ -12,17 +12,18 @@ public class ProgresoJugador
     public int Nivel => 1 + Xp / XpPorNivel;
     public int XpEnNivelActual => Xp % XpPorNivel;
     public int Creditos { get; private set; }
-    public int SectoresRecuperados { get; private set; }
+    public int OleadasSuperadas { get; private set; }
+    public bool EstacionSalvada => OleadasSuperadas == OleadasTotales;
     public IReadOnlyCollection<Patron> Insignias => _insignias;
 
     /// <summary>Para reconstruir un progreso leído de la base.</summary>
-    public static ProgresoJugador Restaurar(int xp, int creditos, int sectoresRecuperados, IEnumerable<Patron> insignias)
+    public static ProgresoJugador Restaurar(int xp, int creditos, int oleadasSuperadas, IEnumerable<Patron> insignias)
     {
         var progreso = new ProgresoJugador
         {
             Xp = xp,
             Creditos = creditos,
-            SectoresRecuperados = sectoresRecuperados,
+            OleadasSuperadas = oleadasSuperadas,
         };
         progreso._insignias.UnionWith(insignias);
         return progreso;
@@ -54,10 +55,10 @@ public class ProgresoJugador
         return true;
     }
 
-    public void RecuperarSector()
+    public void SuperarOleada()
     {
-        if (SectoresRecuperados < SectoresTotales)
-            SectoresRecuperados++;
+        if (OleadasSuperadas < OleadasTotales)
+            OleadasSuperadas++;
     }
 
     /// <returns>true si es una insignia nueva.</returns>

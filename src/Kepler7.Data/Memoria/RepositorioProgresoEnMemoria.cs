@@ -16,5 +16,5 @@ public class RepositorioProgresoEnMemoria : IRepositorioProgreso
     public void Borrar() => _guardado = null;
 
     private static ProgresoJugador Copiar(ProgresoJugador p) =>
-        ProgresoJugador.Restaurar(p.Xp, p.Creditos, p.SectoresRecuperados, p.Insignias);
+        ProgresoJugador.Restaurar(p.Xp, p.Creditos, p.OleadasSuperadas, p.Insignias);
 }

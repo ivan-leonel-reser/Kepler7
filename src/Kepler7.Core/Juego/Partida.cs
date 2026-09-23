@@ -27,7 +27,7 @@ public class Partida
     {
         repositorio.Borrar();
         var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio);
-        partida.Bitacora.Registrar("Consejo", "El Enjambre infiltró Kepler-7. Asumís el mando de la estación.", TipoEntrada.Advertencia);
+        partida.Bitacora.Registrar("Consejo", "El Enjambre va a atacar Kepler-7 en 6 oleadas. Prepará al escuadrón y defendé la estación.", TipoEntrada.Advertencia);
         partida.Guardar();
         return partida;
     }
@@ -38,7 +38,7 @@ public class Partida
             ?? throw new InvalidOperationException("No hay una partida guardada.");
 
         var partida = new Partida(repositorio, progreso, aleatorio);
-        partida.Bitacora.Registrar("Consejo", $"Bienvenido de nuevo, Comandante. Nivel {progreso.Nivel}.");
+        partida.Bitacora.Registrar("Consejo", $"Bienvenido de nuevo, Comandante. Oleadas superadas: {progreso.OleadasSuperadas} de {ProgresoJugador.OleadasTotales}.");
         return partida;
     }
 
