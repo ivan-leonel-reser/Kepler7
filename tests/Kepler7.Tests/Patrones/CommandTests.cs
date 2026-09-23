@@ -75,4 +75,51 @@ public class CommandTests
         comando.Ejecutar();
         Assert.AreSame(barricada, _campo.Unidades.OfType<Barricada>().Single());
     }
+
+    [TestMethod]
+    public void Gestor_DeshaceYRehaceEnOrdenInverso()
+    {
+        var gestor = new GestorComandos();
+        gestor.Ejecutar(new MoverComando(_campo, _soldado, Fila.Retaguardia));
+        gestor.Ejecutar(new AtacarComando(_medico, _zangano));
+
+        gestor.Deshacer();
+        Assert.AreEqual(_zangano.VidaMaxima, _zangano.Vida);
+        Assert.AreEqual(Fila.Retaguardia, _soldado.Fila);
+
+        gestor.Deshacer();
+        Assert.AreEqual(Fila.Vanguardia, _soldado.Fila);
+        Assert.IsFalse(gestor.PuedeDeshacer);
+
+        gestor.Rehacer();
+        Assert.AreEqual(Fila.Retaguardia, _soldado.Fila);
+        Assert.HasCount(1, gestor.AccionesDelTurno);
+    }
+
+    [TestMethod]
+    public void Gestor_UnaAccionNuevaBorraLoQueSePodiaRehacer()
+    {
+        var gestor = new GestorComandos();
+        gestor.Ejecutar(new MoverComando(_campo, _soldado, Fila.Retaguardia));
+        gestor.Deshacer();
+
+        gestor.Ejecutar(new AtacarComando(_soldado, _zangano));
+
+        Assert.IsFalse(gestor.PuedeRehacer);
+    }
+
+    [TestMethod]
+    public void Gestor_AlConfirmarElTurnoPasaAlHistorialYNoSeDeshace()
+    {
+        var gestor = new GestorComandos();
+        gestor.Ejecutar(new MoverComando(_campo, _soldado, Fila.Retaguardia));
+        gestor.Ejecutar(new CurarComando(_medico, _medico, 5));
+
+        gestor.ConfirmarTurno();
+
+        Assert.IsFalse(gestor.PuedeDeshacer);
+        Assert.IsEmpty(gestor.AccionesDelTurno);
+        Assert.HasCount(2, gestor.Historial);
+        Assert.AreEqual("Rojas pasa atrás", gestor.Historial[0]);
+    }
 }
