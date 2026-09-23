@@ -13,8 +13,8 @@ public class GeneradorOleadasTests
         {
             var enemigos = GeneradorOleadas.Crear(numero);
 
-            Assert.IsTrue(enemigos.Count(e => !e.AtacaADistancia) <= CampoBatalla.LugaresPorFila, $"oleada {numero}");
-            Assert.IsTrue(enemigos.Count(e => e.AtacaADistancia) <= CampoBatalla.LugaresPorFila, $"oleada {numero}");
+            Assert.IsLessThanOrEqualTo(CampoBatalla.LugaresPorFila, enemigos.Count(e => !e.AtacaADistancia), $"oleada {numero}");
+            Assert.IsLessThanOrEqualTo(CampoBatalla.LugaresPorFila, enemigos.Count(e => e.AtacaADistancia), $"oleada {numero}");
         }
     }
 
@@ -24,7 +24,7 @@ public class GeneradorOleadasTests
         var vidaPrimera = GeneradorOleadas.Crear(1).Sum(e => e.VidaMaxima);
         var vidaUltima = GeneradorOleadas.Crear(ProgresoJugador.OleadasTotales).Sum(e => e.VidaMaxima);
 
-        Assert.IsTrue(vidaUltima > vidaPrimera * 3);
+        Assert.IsGreaterThan(vidaPrimera * 3, vidaUltima);
     }
 
     [TestMethod]
