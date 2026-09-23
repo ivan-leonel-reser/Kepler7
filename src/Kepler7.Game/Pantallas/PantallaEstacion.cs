@@ -27,13 +27,39 @@ internal class PantallaEstacion : Pantalla
         });
         bitacora.BringToFront();
 
-        Controls.Add(CrearCuerpo());
+        Controls.Add(CrearModulos(partida));
         Controls.Add(panelBitacora);
         Controls.Add(CrearBarraInferior());
         Controls.Add(CrearEncabezado(partida));
     }
 
-    private static Control CrearCuerpo() => new Panel { Dock = DockStyle.Fill };
+    private Control CrearModulos(Partida partida)
+    {
+        const int columnas = 4;
+        var modulos = ModulosEstacion.Todos;
+        var filas = (modulos.Count + columnas - 1) / columnas;
+
+        var grilla = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = columnas,
+            RowCount = filas,
+            Padding = new Padding(12, 12, 12, 0),
+        };
+        for (var c = 0; c < columnas; c++)
+            grilla.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / columnas));
+        for (var f = 0; f < filas; f++)
+            grilla.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / filas));
+
+        foreach (var modulo in modulos)
+        {
+            var tarjeta = new TarjetaModulo(modulo, partida.Progreso.TieneInsignia(modulo.Patron));
+            tarjeta.Abrir += (_, m) => Principal.Mostrar(m.Abrir!(Principal));
+            grilla.Controls.Add(tarjeta);
+        }
+
+        return grilla;
+    }
 
     private static Control CrearEncabezado(Partida partida)
     {
