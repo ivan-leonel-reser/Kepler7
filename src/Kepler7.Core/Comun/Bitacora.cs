@@ -13,5 +13,11 @@ public class Bitacora
         return entrada;
     }
 
+    public EntradaBitacora Registrar(EntradaBitacora entrada)
+    {
+        _entradas.Add(entrada);
+        return entrada;
+    }
+
     public void Limpiar() => _entradas.Clear();
 }
