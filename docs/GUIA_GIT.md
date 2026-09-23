@@ -37,6 +37,18 @@ git push -u origin feature/nombre-del-patron
 
 Después abrís el **Pull Request** en GitHub, le pedís revisión a otro integrante y, cuando lo aprueba y el CI está en verde, se mergea a `main`.
 
+## Varios commits por parte
+
+Un commit por paso que compila, no uno gigante al final. Por ejemplo, para un patrón:
+
+1. `feat(visitor): agrega items del inventario`
+2. `feat(visitor): agrega CalculadorPrecio y ContadorArmas`
+3. `test(visitor): cubre los tres visitantes`
+4. `feat(game): agrega pantalla del Almacen`
+5. `docs(uml): diagrama de Visitor`
+
+Antes del PR, lo nuevo tiene que funcionar dentro del juego (ver [REGLAS.md](REGLAS.md), "Cada parte tiene que funcionar").
+
 ## Mensajes de commit
 
 `tipo(tema): qué hace`, en español y en presente.

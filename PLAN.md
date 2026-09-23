@@ -76,7 +76,7 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el veneno de `Apli
 | Carlos Joel Sánchez Quiroz | pendiente | Builder · Strategy · Template Method | README, publicación Release |
 | Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (XP, niveles, insignias) + pantallas inicial, tutorial y final |
 
-Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UML y párrafo del informe (ver "Definición de terminado" en docs/REGLAS.md). Informe y PowerPoint se arman entre todos con esos párrafos; el diagrama UML general lo hace Ivan.
+Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UML y párrafo del informe (ver "Definición de terminado" en docs/REGLAS.md). **Cada parte tiene que quedar funcionando dentro del juego** apenas se mergea, y se trabaja en varios commits (ver "Cada parte tiene que funcionar" en docs/REGLAS.md). Informe y PowerPoint se arman entre todos con esos párrafos; el diagrama UML general lo hace Ivan.
 
 ## 6. Fases
 
@@ -91,7 +91,8 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 
 **Fase 0 - Setup** *(una persona, directo a `main`)*
 - [x] Repo privado en GitHub
-- [ ] Invitar a los 4 integrantes restantes (faltan sus usuarios de GitHub)
+- [ ] Invitar a los 4 integrantes restantes: enviadas a `kainheinlein` y `NetworksProgram`; faltan Maite y Belén
+- [ ] Cada integrante autoriza su cuenta en la PC del grupo ([docs/SUMARSE_AL_REPO.md](docs/SUMARSE_AL_REPO.md))
 - [x] `Kepler7.sln` con Core / Data / Game / Tests, `.gitignore`, `README.md` inicial
 - [x] GitHub Actions: `dotnet build` + `dotnet test` en cada PR
 - [x] Plantilla de PR y guía corta de Git para el equipo (`docs/GUIA_GIT.md`)

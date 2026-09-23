@@ -51,8 +51,18 @@ Kepler7.sln
 - `main` siempre compila y pasa los tests. No se pushea directo a `main` (salvo el setup inicial): rama + PR + aprobación de **otro** integrante.
 - Ramas: `feature/<patron-o-tema>`, `fix/<tema>`, `docs/<tema>`. Ej.: `feature/chain-defensas`.
 - Commits chicos y significativos, en español, estilo Conventional Commits: `feat(builder): agrega RecetaCarga`, `test(proxy): cubre acceso denegado`, `docs(uml): diagrama de State`.
+- Cada parte se hace en **varios commits**, uno por paso que compila (modelo, lógica con sus tests, pantalla, UML e informe). Nada de un único commit gigante al final.
 - No se commitea: `bin/`, `obj/`, `.vs/`, `*.user`, bases `.mdf/.ldf`, ejecutables (el Release va como *GitHub Release*, no en el árbol).
 - Cada integrante es **dueño** de sus patrones (tabla en PLAN.md): los implementa, los testea, hace su pantalla y su diagrama UML, y tiene que poder defenderlos en la exposición.
+
+## Cada parte tiene que funcionar
+
+Lo de cada integrante se prueba jugando, no solo compilando. Así vamos probando a medida que avanzamos.
+
+- Todo lo que se mergea a `main` deja el juego andando: compila, arranca y lo nuevo **se usa desde la interfaz**. No se mergean clases sueltas "para conectar después".
+- Cada módulo tiene su botón en la Estación (`ModulosEstacion` en `Kepler7.Game`). Queda deshabilitado hasta que su dueño lo termina y lo habilita en el mismo PR.
+- Si un patrón depende de algo que todavía no existe (por ejemplo, el combate), primero se prueba en la pantalla de su módulo y en la Fase 3 se integra a la misión.
+- Antes de pedir revisión: `dotnet test` en verde y probar a mano el recorrido Inicio → Estación → módulo. Quien revisa el PR también lo prueba.
 
 ## Definición de "terminado" para un patrón
 
