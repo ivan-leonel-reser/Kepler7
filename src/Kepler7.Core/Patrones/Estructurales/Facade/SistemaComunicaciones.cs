@@ -20,7 +20,7 @@ internal class SistemaComunicaciones : ISubsistema
     public string DifundirAlerta()
     {
         Estado = EstadoOperativo.Alerta;
-        return "Alerta roja difundida en la estación y enviada a la Tierra.";
+        return "Alerta roja difundida a la estación y a la Tierra.";
     }
 
     public string CerrarEnlace()

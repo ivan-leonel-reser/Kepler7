@@ -52,7 +52,7 @@ public class ControlCentral
     public IReadOnlyList<EntradaBitacora> EntrarEnEmergencia()
     {
         if (Modo == ModoEstacion.Apagada)
-            return [new(Origen, "La estación está apagada: primero hay que iniciar un turno.", TipoEntrada.Advertencia)];
+            return [new(Origen, "La estación está apagada: primero iniciá un turno.", TipoEntrada.Advertencia)];
         if (Modo == ModoEstacion.Emergencia)
             return [new(Origen, "La estación ya está en modo emergencia.", TipoEntrada.Advertencia)];
 

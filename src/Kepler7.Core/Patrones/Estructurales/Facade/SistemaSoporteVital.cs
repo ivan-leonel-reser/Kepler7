@@ -18,7 +18,7 @@ internal class SistemaSoporteVital : ISubsistema
     {
         Oxigeno = 80;
         Estado = EstadoOperativo.Alerta;
-        return "Compuertas estancas cerradas: el aire se concentra en las zonas seguras.";
+        return "Sectores comprometidos sellados con compuertas estancas.";
     }
 
     public string ModoMinimo()
