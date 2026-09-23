@@ -105,7 +105,7 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 - [x] Esqueleto de Game: inicio, puente de mando con los 8 módulos (deshabilitados hasta que cada dueño conecte el suyo) y bitácora
 
 **Fase 2 - Patrones en paralelo** *(cada uno en su rama)*
-- [ ] Builder  [ ] Prototype  [ ] Bridge  [ ] Facade  [ ] Flyweight  [ ] Proxy
+- [ ] Builder  [ ] Prototype  [ ] Bridge  [x] Facade  [ ] Flyweight  [ ] Proxy
 - [ ] Chain of Resp.  [ ] Command  [ ] Visitor  [ ] State  [ ] Template Method  [ ] Strategy
 
 **Fase 3 - Integración**
