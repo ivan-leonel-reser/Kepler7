@@ -36,3 +36,4 @@ dotnet run --project src/Kepler7.Game
 - [PLAN.md](PLAN.md) - plan, reparto de patrones y fechas
 - [docs/REGLAS.md](docs/REGLAS.md) - reglas del proyecto
 - [docs/GUIA_GIT.md](docs/GUIA_GIT.md) - cómo clonar, crear tu rama y abrir un PR
+- [docs/SUMARSE_AL_REPO.md](docs/SUMARSE_AL_REPO.md) - cómo dar de alta tu cuenta en la PC del grupo
