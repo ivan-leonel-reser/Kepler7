@@ -5,23 +5,25 @@ namespace Kepler7.Core.Combate;
 /// <summary>Lo que una unidad puede mirar para decidir qué hacer en su turno.</summary>
 public class Contexto
 {
-    public Contexto(Grilla grilla, int numeroTurno, IAleatorio aleatorio)
+    public Contexto(CampoBatalla campo, int numeroTurno, IAleatorio aleatorio)
     {
-        Grilla = grilla;
+        Campo = campo;
         NumeroTurno = numeroTurno;
         Aleatorio = aleatorio;
     }
 
-    public Grilla Grilla { get; }
+    public CampoBatalla Campo { get; }
     public int NumeroTurno { get; }
     public IAleatorio Aleatorio { get; }
 
     public IEnumerable<Unidad> RivalesDe(Unidad unidad) =>
-        Grilla.UnidadesVivasDe(unidad.Bando == Bando.Escuadron ? Bando.Enjambre : Bando.Escuadron);
+        Campo.UnidadesVivasDe(CampoBatalla.RivalDe(unidad.Bando));
 
     public IEnumerable<Unidad> AliadosDe(Unidad unidad) =>
-        Grilla.UnidadesVivasDe(unidad.Bando).Where(u => u != unidad);
+        Campo.UnidadesVivasDe(unidad.Bando).Where(u => u != unidad);
 
-    public Unidad? RivalMasCercano(Unidad unidad) =>
-        RivalesDe(unidad).OrderBy(r => r.Posicion.DistanciaA(unidad.Posicion)).FirstOrDefault();
+    public IReadOnlyList<Unidad> AtacablesPor(Unidad unidad) => Campo.Atacables(unidad.Bando);
+
+    public Unidad? AtacableMasDebil(Unidad unidad) =>
+        AtacablesPor(unidad).OrderBy(u => u.Vida).FirstOrDefault();
 }

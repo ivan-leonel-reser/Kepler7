@@ -1,9 +1,9 @@
 namespace Kepler7.Core.Combate;
 
-/// <summary>Cualquier unidad que ocupa una casilla de la grilla, del escuadrón o del Enjambre.</summary>
+/// <summary>Cualquier unidad del campo de batalla, del escuadrón o del Enjambre.</summary>
 public abstract class Unidad
 {
-    protected Unidad(string nombre, Bando bando, int vidaMaxima, int ataque, int movimiento, int alcance)
+    protected Unidad(string nombre, Bando bando, int vidaMaxima, int ataque, bool atacaADistancia)
     {
         if (vidaMaxima <= 0)
             throw new ArgumentOutOfRangeException(nameof(vidaMaxima));
@@ -13,8 +13,7 @@ public abstract class Unidad
         VidaMaxima = vidaMaxima;
         Vida = vidaMaxima;
         Ataque = ataque;
-        Movimiento = movimiento;
-        Alcance = alcance;
+        AtacaADistancia = atacaADistancia;
     }
 
     public string Nombre { get; }
@@ -22,13 +21,15 @@ public abstract class Unidad
     public int VidaMaxima { get; }
     public int Vida { get; private set; }
     public int Ataque { get; set; }
-    public int Movimiento { get; set; }
-    public int Alcance { get; set; }
+    public bool AtacaADistancia { get; }
 
-    // La asigna la Grilla al colocar o mover la unidad.
-    public Posicion Posicion { get; internal set; }
+    // La asigna el CampoBatalla al agregar o mover la unidad.
+    public Fila Fila { get; internal set; }
 
     public bool EstaViva => Vida > 0;
+
+    /// <summary>Cuerpo a cuerpo solo se ataca desde adelante; a distancia, desde cualquier fila.</summary>
+    public bool PuedeAtacar => EstaViva && (AtacaADistancia || Fila == Fila.Vanguardia);
 
     /// <summary>Resta vida sin pasar por las defensas. Devuelve cuánta vida perdió realmente.</summary>
     public int PerderVida(int cantidad)
