@@ -49,6 +49,13 @@ public partial class FormPrincipal : Form
 
     internal void IrAEstacion() => Mostrar(new PantallaEstacion(this));
 
+    /// <summary>Después de una derrota: la partida ya se borró y se vuelve al inicio.</summary>
+    internal void TerminarPartida()
+    {
+        PartidaActual = null;
+        Mostrar(new PantallaInicio(this));
+    }
+
     internal void Mostrar(Pantalla pantalla)
     {
         SuspendLayout();
