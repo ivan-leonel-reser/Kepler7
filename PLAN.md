@@ -53,7 +53,7 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el veneno de `Apli
 
 ## 4. Gamificación y recorrido (consigna 5.4)
 
-- [ ] Pantalla inicial con nombre del juego e integrantes
+- [x] Pantalla inicial con nombre del juego e integrantes
 - [ ] Tutorial de 3+ pantallas (estación, combate, progreso)
 - [ ] Ciclo acción → respuesta → progreso
 - [ ] XP, niveles, créditos y desbloqueos
@@ -74,7 +74,7 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el veneno de `Apli
 | Maite Stefania Benitez | pendiente | Prototype · Flyweight · State | Identidad visual y sonido |
 | María Belén Fiuza | pendiente | Bridge · Proxy | Persistencia SQL Server (`Kepler7.Data`, scripts `db/`) - se engancha con el registro de la Bóveda |
 | Carlos Joel Sánchez Quiroz | pendiente | Builder · Strategy · Template Method | README, publicación Release |
-| Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (XP, niveles, insignias) + pantallas inicial, tutorial y final |
+| Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (panel de logros, recompensas, subida de nivel) + tutorial y pantalla final |
 
 Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UML y párrafo del informe (ver "Definición de terminado" en docs/REGLAS.md). **Cada parte tiene que quedar funcionando dentro del juego** apenas se mergea, y se trabaja en varios commits (ver "Cada parte tiene que funcionar" en docs/REGLAS.md). Informe y PowerPoint se arman entre todos con esos párrafos; el diagrama UML general lo hace Ivan.
 
@@ -99,9 +99,10 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 - [ ] Confirmar con la cátedra: .NET 8, `Microsoft.Data.SqlClient` y MSTest
 
 **Fase 1 - Cimientos de Core** *(bloquea al resto; corta)*
-- [ ] Modelo base: `Unidad`, `Enemigo`, `Grilla`, `Danio`, `Contexto`, `IAleatorio`, `EntradaBitacora`
-- [ ] Interfaces de persistencia y modelo de progreso (XP, nivel, créditos, insignias)
-- [ ] Esqueleto de Game: formulario principal con navegación entre pantallas vacías
+- [x] Modelo base: `Unidad`, `Enemigo`, `Grilla`, `Danio`, `Contexto`, `IAleatorio`, `EntradaBitacora`
+- [x] Interfaces de persistencia y modelo de progreso (XP, nivel, créditos, insignias)
+- [x] Persistencia en memoria en `Kepler7.Data` mientras no esté SQL Server
+- [x] Esqueleto de Game: inicio, puente de mando con los 8 módulos (deshabilitados hasta que cada dueño conecte el suyo) y bitácora
 
 **Fase 2 - Patrones en paralelo** *(cada uno en su rama)*
 - [ ] Builder  [ ] Prototype  [ ] Bridge  [ ] Facade  [ ] Flyweight  [ ] Proxy
