@@ -1,12 +1,71 @@
+using Kepler7.Core.Comun;
 using Kepler7.Core.Juego;
+using Kepler7.Core.Persistencia;
+using Kepler7.Game.Pantallas;
 
 namespace Kepler7.Game;
 
+/// <summary>Única ventana del juego: va cambiando la pantalla que muestra.</summary>
 public partial class FormPrincipal : Form
 {
-    public FormPrincipal()
+    private readonly IRepositorioProgreso _repositorio;
+    private Pantalla? _pantallaActual;
+
+    public FormPrincipal(IRepositorioProgreso repositorio)
     {
         InitializeComponent();
+        _repositorio = repositorio;
+
         Text = InfoJuego.Titulo;
+        ClientSize = new Size(1180, 740);
+        MinimumSize = new Size(1000, 680);
+        StartPosition = FormStartPosition.CenterScreen;
+        BackColor = Tema.Fondo;
+
+        Mostrar(new PantallaInicio(this));
+    }
+
+    internal Partida? PartidaActual { get; private set; }
+
+    internal bool HayPartidaGuardada => _repositorio.Cargar() is not null;
+
+    internal void NuevaPartida()
+    {
+        PartidaActual = Partida.Nueva(_repositorio, new Aleatorio());
+        IrAEstacion();
+    }
+
+    internal void ContinuarPartida()
+    {
+        PartidaActual = Partida.Continuar(_repositorio, new Aleatorio());
+        IrAEstacion();
+    }
+
+    internal void IrAInicio()
+    {
+        PartidaActual?.Guardar();
+        Mostrar(new PantallaInicio(this));
+    }
+
+    internal void IrAEstacion() => Mostrar(new PantallaEstacion(this));
+
+    internal void Mostrar(Pantalla pantalla)
+    {
+        SuspendLayout();
+        if (_pantallaActual is not null)
+        {
+            Controls.Remove(_pantallaActual);
+            _pantallaActual.Dispose();
+        }
+
+        _pantallaActual = pantalla;
+        Controls.Add(pantalla);
+        ResumeLayout();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        PartidaActual?.Guardar();
+        base.OnFormClosing(e);
     }
 }
