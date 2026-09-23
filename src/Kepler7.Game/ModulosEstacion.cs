@@ -19,7 +19,7 @@ internal static class ModulosEstacion
         new("Hangar", Patron.Builder, "Ensamblá la nave de apoyo para la próxima misión.", null),
         new("Laboratorio", Patron.Prototype, "Cloná tripulantes para completar el escuadrón.", null),
         new("Comunicaciones", Patron.Bridge, "Enviá mensajes cifrados a la Tierra.", null),
-        new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", null),
+        new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", p => new PantallaControlCentral(p)),
         new("Censo", Patron.Flyweight, "Registro de los 10.000 tripulantes de la estación.", null),
         new("Bóveda", Patron.Proxy, "Archivos reservados del Consejo de Ingeniería.", null),
         new("Almacén", Patron.Visitor, "Analizá el botín recuperado en las misiones.", null),
