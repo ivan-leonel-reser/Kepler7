@@ -1,4 +1,5 @@
 using Kepler7.Core.Comun;
+using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Persistencia;
 using Kepler7.Core.Progreso;
 
@@ -17,17 +18,20 @@ public class Partida
         _repositorio = repositorio;
         Progreso = progreso;
         Aleatorio = aleatorio;
+        ControlCentral = new ControlCentral(Bitacora);
     }
 
     public ProgresoJugador Progreso { get; }
     public IAleatorio Aleatorio { get; }
     public Bitacora Bitacora { get; } = new();
+    public ControlCentral ControlCentral { get; }
 
     public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio)
     {
         repositorio.Borrar();
         var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio);
         partida.Bitacora.Registrar("Consejo", "El Enjambre infiltró Kepler-7. Asumís el mando de la estación.", TipoEntrada.Advertencia);
+        partida.AvisarEstacionApagada();
         partida.Guardar();
         return partida;
     }
@@ -39,10 +43,22 @@ public class Partida
 
         var partida = new Partida(repositorio, progreso, aleatorio);
         partida.Bitacora.Registrar("Consejo", $"Bienvenido de nuevo, Comandante. Nivel {progreso.Nivel}.");
+        partida.AvisarEstacionApagada();
         return partida;
     }
 
     public void Guardar() => _repositorio.Guardar(Progreso);
+
+    /// <summary>Se llama después de cada acción del jugador. Devuelve las insignias que acaba de ganar.</summary>
+    public IReadOnlyList<Insignia> RevisarLogros()
+    {
+        var nuevas = new List<Insignia>();
+
+        if (ControlCentral.TurnosIniciados > 0 && ControlCentral.EmergenciasDeclaradas > 0 && ControlCentral.VecesApagada > 0)
+            Sumar(nuevas, OtorgarInsignia(Patron.Facade));
+
+        return nuevas;
+    }
 
     /// <summary>Da la insignia con su recompensa y guarda. Devuelve null si ya la tenía.</summary>
     public Insignia? OtorgarInsignia(Patron patron)
@@ -60,5 +76,14 @@ public class Partida
 
         Guardar();
         return insignia;
+    }
+
+    private void AvisarEstacionApagada() =>
+        Bitacora.Registrar("Control central", "La estación está apagada. Iniciá un turno desde el Control Central.", TipoEntrada.Advertencia);
+
+    private static void Sumar(List<Insignia> nuevas, Insignia? insignia)
+    {
+        if (insignia is not null)
+            nuevas.Add(insignia);
     }
 }
