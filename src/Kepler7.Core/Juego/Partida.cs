@@ -1,3 +1,4 @@
+using Kepler7.Core.Combate;
 using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Persistencia;
@@ -25,6 +26,16 @@ public class Partida
     public IAleatorio Aleatorio { get; }
     public Bitacora Bitacora { get; } = new();
     public ControlCentral ControlCentral { get; }
+    public List<UnidadEscuadron> Escuadron { get; } = EscuadronInicial();
+    public Oleada? OleadaActual { get; private set; }
+
+    /// <summary>La partida se perdió: ya no se guarda más.</summary>
+    public bool Terminada { get; private set; }
+
+    public int NumeroProximaOleada => Progreso.OleadasSuperadas + 1;
+
+    public bool PuedeDefender =>
+        !Terminada && !Progreso.EstacionSalvada && ControlCentral.Modo == ModoEstacion.Operativa;
 
     public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio)
     {
@@ -47,7 +58,63 @@ public class Partida
         return partida;
     }
 
-    public void Guardar() => _repositorio.Guardar(Progreso);
+    public void Guardar()
+    {
+        if (!Terminada)
+            _repositorio.Guardar(Progreso);
+    }
+
+    public Oleada EmpezarOleada()
+    {
+        if (!PuedeDefender)
+            throw new InvalidOperationException("Para defender una oleada la estación tiene que estar operativa.");
+
+        foreach (var unidad in Escuadron)
+            unidad.Curar(unidad.VidaMaxima);
+
+        var numero = NumeroProximaOleada;
+        var oleada = new Oleada(numero, Escuadron, GeneradorOleadas.Crear(numero), Aleatorio);
+
+        // La alarma la da el Control Central: una sola orden pone toda la estación en emergencia.
+        foreach (var paso in ControlCentral.EntrarEnEmergencia())
+            oleada.Bitacora.Registrar(paso);
+        var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).Count();
+        oleada.Bitacora.Registrar("Oleada", $"Oleada {numero} de {ProgresoJugador.OleadasTotales}: {enemigos} enemigos. Le toca al escuadrón.", TipoEntrada.Peligro);
+
+        OleadaActual = oleada;
+        return oleada;
+    }
+
+    public ResultadoOleada CerrarOleada()
+    {
+        var oleada = OleadaActual ?? throw new InvalidOperationException("No hay una oleada en curso.");
+        if (!oleada.Terminada)
+            throw new InvalidOperationException("La oleada todavía no terminó.");
+
+        if (oleada.Estado == EstadoOleada.Derrota)
+        {
+            var apagado = ControlCentral.ApagarEstacion();
+            Bitacora.Registrar("Oleada", $"El escuadrón cayó en la oleada {oleada.Numero}. Kepler-7 se apaga.", TipoEntrada.Peligro);
+            Terminada = true;
+            _repositorio.Borrar();
+            return new ResultadoOleada(false, 0, 0, false, apagado);
+        }
+
+        var xp = 40 + 10 * oleada.Numero;
+        var creditos = 50 + 25 * oleada.Numero;
+        Progreso.SuperarOleada();
+        Progreso.GanarCreditos(creditos);
+        var subioNivel = Progreso.GanarXp(xp);
+
+        // Pasado el ataque, la fachada vuelve a poner la estación en su turno normal.
+        var normalidad = ControlCentral.IniciarTurno();
+        Bitacora.Registrar("Oleada", $"Oleada {oleada.Numero} superada: +{xp} XP, +{creditos} créditos.", TipoEntrada.Exito);
+        if (Progreso.EstacionSalvada)
+            Bitacora.Registrar("Consejo", "Kepler-7 resistió las 6 oleadas. La estación está a salvo.", TipoEntrada.Exito);
+
+        Guardar();
+        return new ResultadoOleada(true, xp, creditos, subioNivel, normalidad);
+    }
 
     /// <summary>Se llama después de cada acción del jugador. Devuelve las insignias que acaba de ganar.</summary>
     public IReadOnlyList<Insignia> RevisarLogros()
@@ -56,6 +123,9 @@ public class Partida
 
         if (ControlCentral.TurnosIniciados > 0 && ControlCentral.EmergenciasDeclaradas > 0 && ControlCentral.VecesApagada > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Facade));
+
+        if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
+            Sumar(nuevas, OtorgarInsignia(Patron.Command));
 
         return nuevas;
     }
@@ -77,6 +147,14 @@ public class Partida
         Guardar();
         return insignia;
     }
+
+    private static List<UnidadEscuadron> EscuadronInicial() =>
+    [
+        UnidadEscuadron.Crear("Vega", ClaseUnidad.Comandante),
+        UnidadEscuadron.Crear("Rojas", ClaseUnidad.Soldado),
+        UnidadEscuadron.Crear("Paz", ClaseUnidad.Medico),
+        UnidadEscuadron.Crear("Luna", ClaseUnidad.Francotirador),
+    ];
 
     private void AvisarEstacionApagada() =>
         Bitacora.Registrar("Control central", "La estación está apagada. Iniciá un turno desde el Control Central.", TipoEntrada.Advertencia);
