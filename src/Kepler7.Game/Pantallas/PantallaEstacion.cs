@@ -5,7 +5,7 @@ using Kepler7.Game.Controles;
 
 namespace Kepler7.Game.Pantallas;
 
-/// <summary>El hub: desde acá se entra a cada módulo de la estación y a las misiones.</summary>
+/// <summary>El hub: desde acá se entra a cada módulo de la estación y a defender la oleada.</summary>
 internal class PantallaEstacion : Pantalla
 {
     public PantallaEstacion(FormPrincipal principal) : base(principal)
@@ -105,7 +105,7 @@ internal class PantallaEstacion : Pantalla
         [
             CrearDato("ESTACIÓN", modo, colorModo),
             CrearDato("CRÉDITOS", progreso.Creditos.ToString()),
-            CrearDato("SECTORES", $"{progreso.SectoresRecuperados}/{ProgresoJugador.SectoresTotales}"),
+            CrearDato("OLEADAS", $"{progreso.OleadasSuperadas}/{ProgresoJugador.OleadasTotales}"),
             CrearDato("INSIGNIAS", $"{progreso.Insignias.Count}/{CatalogoInsignias.Todas.Count}"),
         ]);
 
@@ -141,10 +141,10 @@ internal class PantallaEstacion : Pantalla
         var menu = Tema.CrearBoton("Menú principal", 180);
         menu.Click += (_, _) => Principal.IrAInicio();
 
-        var mision = Tema.CrearBoton("Iniciar misión (en desarrollo)", 260);
-        mision.Enabled = false;
+        var defender = Tema.CrearBoton("Defender la oleada (en desarrollo)", 280);
+        defender.Enabled = false;
 
-        barra.Controls.AddRange([menu, mision]);
+        barra.Controls.AddRange([menu, defender]);
         return barra;
     }
 }

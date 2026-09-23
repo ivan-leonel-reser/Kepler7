@@ -7,12 +7,6 @@ namespace Kepler7.Tests.Combate;
 public class CombateTests
 {
     [TestMethod]
-    public void Posicion_DistanciaSinDiagonales()
-    {
-        Assert.AreEqual(5, new Posicion(0, 0).DistanciaA(new Posicion(2, 3)));
-    }
-
-    [TestMethod]
     public void Unidad_LaVidaNoBajaDeCeroNiPasaLaMaxima()
     {
         var soldado = UnidadEscuadron.Crear("Rojas", ClaseUnidad.Soldado);
@@ -36,53 +30,82 @@ public class CombateTests
     }
 
     [TestMethod]
-    public void Grilla_NoPermiteDosUnidadesEnLaMismaCasilla()
+    public void CuerpoACuerpo_SoloAtacaDesdeAdelante()
     {
-        var grilla = new Grilla(5, 5);
-        grilla.Colocar(UnidadEscuadron.Crear("Rojas", ClaseUnidad.Soldado), new Posicion(1, 1));
-
-        Assert.ThrowsExactly<InvalidOperationException>(() =>
-            grilla.Colocar(new Enemigo("Zangano", 10, 3, 2, 1), new Posicion(1, 1)));
-    }
-
-    [TestMethod]
-    public void Grilla_NoPermiteMoverAfuera()
-    {
-        var grilla = new Grilla(5, 5);
+        var campo = new CampoBatalla();
         var soldado = UnidadEscuadron.Crear("Rojas", ClaseUnidad.Soldado);
-        grilla.Colocar(soldado, new Posicion(0, 0));
+        var francotirador = UnidadEscuadron.Crear("Luna", ClaseUnidad.Francotirador);
+        campo.Agregar(soldado, Fila.Retaguardia);
+        campo.Agregar(francotirador, Fila.Retaguardia);
 
-        Assert.ThrowsExactly<InvalidOperationException>(() => grilla.Mover(soldado, new Posicion(-1, 0)));
-        Assert.AreEqual(new Posicion(0, 0), soldado.Posicion);
+        Assert.IsFalse(soldado.PuedeAtacar);
+        Assert.IsTrue(francotirador.PuedeAtacar);
+
+        campo.Mover(soldado, Fila.Vanguardia);
+        Assert.IsTrue(soldado.PuedeAtacar);
     }
 
     [TestMethod]
-    public void Grilla_UnaUnidadCaidaLiberaLaCasilla()
+    public void NoEntranMasDeTresPorFila()
     {
-        var grilla = new Grilla(5, 5);
-        var enemigo = new Enemigo("Zangano", 10, 3, 2, 1);
-        grilla.Colocar(enemigo, new Posicion(2, 2));
+        var campo = new CampoBatalla();
+        for (var i = 0; i < CampoBatalla.LugaresPorFila; i++)
+            campo.Agregar(new Enemigo($"Zangano {i}", 10, 3), Fila.Vanguardia);
 
-        enemigo.PerderVida(10);
-
-        Assert.IsTrue(grilla.EstaLibre(new Posicion(2, 2)));
-        Assert.IsEmpty(grilla.UnidadesVivasDe(Bando.Enjambre).ToList());
+        Assert.IsFalse(campo.HayLugar(Bando.Enjambre, Fila.Vanguardia));
+        Assert.IsTrue(campo.HayLugar(Bando.Escuadron, Fila.Vanguardia));
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
+            campo.Agregar(new Enemigo("Zangano extra", 10, 3), Fila.Vanguardia));
     }
 
     [TestMethod]
-    public void Contexto_EncuentraAlRivalMasCercano()
+    public void MoverAUnaFilaLlenaNoCambiaNada()
     {
-        var grilla = new Grilla(6, 6);
-        var enemigo = new Enemigo("Zangano", 10, 3, 2, 1);
-        var lejos = UnidadEscuadron.Crear("Lejos", ClaseUnidad.Soldado);
-        var cerca = UnidadEscuadron.Crear("Cerca", ClaseUnidad.Medico);
-        grilla.Colocar(enemigo, new Posicion(0, 0));
-        grilla.Colocar(lejos, new Posicion(5, 5));
-        grilla.Colocar(cerca, new Posicion(1, 1));
+        var campo = new CampoBatalla();
+        for (var i = 0; i < CampoBatalla.LugaresPorFila; i++)
+            campo.Agregar(UnidadEscuadron.Crear($"Soldado {i}", ClaseUnidad.Soldado), Fila.Vanguardia);
+        var medico = UnidadEscuadron.Crear("Paz", ClaseUnidad.Medico);
+        campo.Agregar(medico, Fila.Retaguardia);
 
-        var contexto = new Contexto(grilla, 1, new AleatorioFijo());
+        Assert.ThrowsExactly<InvalidOperationException>(() => campo.Mover(medico, Fila.Vanguardia));
+        Assert.AreEqual(Fila.Retaguardia, medico.Fila);
+    }
 
-        Assert.AreSame(cerca, contexto.RivalMasCercano(enemigo));
-        Assert.HasCount(1, contexto.AliadosDe(lejos).ToList());
+    [TestMethod]
+    public void SoloSeAtacaAdelante_HastaQueQuedaVacio()
+    {
+        var campo = new CampoBatalla();
+        var adelante = new Enemigo("Coloso", 10, 5);
+        var atras = new Enemigo("Escupidor", 8, 4, atacaADistancia: true);
+        campo.Agregar(adelante, Fila.Vanguardia);
+        campo.Agregar(atras, Fila.Retaguardia);
+
+        CollectionAssert.AreEqual(new[] { adelante }, campo.Atacables(Bando.Escuadron).ToArray());
+
+        adelante.PerderVida(10);
+
+        CollectionAssert.AreEqual(new[] { atras }, campo.Atacables(Bando.Escuadron).ToArray());
+    }
+
+    [TestMethod]
+    public void Contexto_EncuentraAlAtacableMasDebil()
+    {
+        var campo = new CampoBatalla();
+        var enemigo = new Enemigo("Zangano", 10, 3);
+        var fuerte = UnidadEscuadron.Crear("Fuerte", ClaseUnidad.Comandante);
+        var debil = UnidadEscuadron.Crear("Debil", ClaseUnidad.Soldado);
+        debil.PerderVida(20);
+        var escondido = UnidadEscuadron.Crear("Escondido", ClaseUnidad.Francotirador);
+        escondido.PerderVida(15);
+        campo.Agregar(enemigo, Fila.Vanguardia);
+        campo.Agregar(fuerte, Fila.Vanguardia);
+        campo.Agregar(debil, Fila.Vanguardia);
+        campo.Agregar(escondido, Fila.Retaguardia);
+
+        var contexto = new Contexto(campo, 1, new AleatorioFijo());
+
+        // El de atrás tiene menos vida, pero no se lo puede atacar mientras haya alguien adelante.
+        Assert.AreSame(debil, contexto.AtacableMasDebil(enemigo));
+        Assert.HasCount(2, contexto.AliadosDe(fuerte).ToList());
     }
 }
