@@ -6,11 +6,9 @@ Trabajamos todos desde la PC del grupo. Para que tus commits, tus push y tus PR 
 
 Si no tenés, creala en https://github.com/signup (es gratis).
 
-## 2. Pasale a Ivan tu usuario y tu mail
+## 2. Pasale a Ivan tu usuario
 
-- **Usuario:** el que aparece en tu perfil de GitHub (ej. `juanperez`).
-- **Mail:** entrá a https://github.com/settings/emails y copiá tu mail principal.
-  Si ahí tenés tildado *Keep my email addresses private*, pasá en cambio la dirección que termina en `@users.noreply.github.com` que aparece en esa misma página. Si no, GitHub rechaza los push con tu mail real.
+Solo el usuario de GitHub (el que aparece en tu perfil, ej. `juanperez`). No hace falta el mail: los commits usan la dirección `@users.noreply.github.com` de tu cuenta, que GitHub siempre vincula a tu perfil aunque tengas el mail privado.
 
 ## 3. Aceptá la invitación al repo
 
