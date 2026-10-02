@@ -7,7 +7,7 @@
 | Tema | Decisión | Estado |
 |---|---|---|
 | Plataforma | .NET 8 + Windows Forms | a confirmar con la cátedra (la consigna acepta .NET 8 o Framework 4.8 "según lo acordado") |
-| Género | Táctico por turnos en grilla | definido |
+| Género | Defensa por oleadas con combate táctico por turnos en dos filas | definido |
 | Persistencia | SQL Server (LocalDB/Express) + script de creación | definido; falta confirmar que `Microsoft.Data.SqlClient` (NuGet de Microsoft, no de terceros) está permitido |
 | Nivel objetivo | **Comandante** (tests, Release, identidad propia) | definido |
 | Tests | MSTest en `Kepler7.Tests` | a confirmar; plan B: runner de consola propio sin paquetes |
@@ -17,44 +17,57 @@
 
 ## 2. El juego
 
-**Título de trabajo:** *Kepler-7: Protocolo Fénix*
+**Título:** *Kepler-7: Protocolo Fénix*
 
-**Premisa.** Una entidad hostil, *el Enjambre*, tomó los seis subsistemas de la estación: Energía, Soporte Vital, Navegación, Comunicaciones, Seguridad y Defensa. El jugador es el Comandante convocado por el Consejo de Ingeniería: tiene que recuperar los seis sectores uno por uno y después purgar el Núcleo.
+**En una frase.** El Enjambre ataca Kepler-7 en 6 oleadas. Antes de cada una preparás a tu escuadrón en la estación y después la defendés en un combate por turnos. Si aguantás las 6, salvás la estación.
 
-**Ciclo de juego.**
+**Ciclo de juego** (se repite 6 veces):
 
 ```
-ESTACIÓN (preparación)  →  MISIÓN (combate táctico)  →  RECOMPENSAS  →  guardado  →  siguiente sector
+Inicio y tutorial
+   ↓
+PREPARAR el escuadrón (estación)  →  DEFENDER la oleada (combate)  →  COBRAR la recompensa
+   ↑___________________________________________________________________________|
+   ↓ (después de la oleada 6, o si cae el escuadrón)
+Pantalla final con el resumen
 ```
 
-- **Estación (hub):** módulos donde se prepara la misión - Hangar, Laboratorio, Comunicaciones, Control Central, Censo, Bóveda, Almacén, Armería.
-- **Misión:** combate por turnos en grilla, escuadrón del jugador vs. unidades del Enjambre.
-- **Recompensas:** XP, créditos, botín, insignias de patrones. Subir de nivel desbloquea recetas, clases y sectores.
-- **Victoria:** recuperar los 6 sectores y vencer en el Núcleo. **Derrota:** la integridad de la estación llega a 0 o el escuadrón es eliminado sin créditos para reponerlo.
+- **Preparar (estación):** el puente de mando tiene un módulo por patrón de preparación (Hangar, Censo, Laboratorio, Comunicaciones, Bóveda, Almacén, Armería) y el Control Central.
+- **Defender (oleada):** combate por turnos en dos filas contra el Enjambre. Cada oleada trae enemigos más fuertes.
+- **Recompensa:** XP, créditos, botín para el Almacén e insignias. Subir de nivel desbloquea recetas y mejoras.
+- **Victoria:** superar la oleada 6. **Derrota:** si cae todo el escuadrón en una oleada, la estación se apaga y termina la partida.
+
+**Combate en dos filas.**
+
+- Cada bando tiene una fila de adelante (vanguardia) y una de atrás (retaguardia), con hasta 3 unidades por fila.
+- Las unidades cuerpo a cuerpo solo atacan desde adelante; las de distancia (francotirador, médico) actúan desde cualquier fila.
+- Solo se puede atacar a la fila de adelante del rival. Si está vacía, a la de atrás.
+- En su turno cada unidad hace una acción: cambiar de fila, atacar, curar o construir una barricada. Hasta confirmar el turno se puede deshacer y rehacer. Después juega el Enjambre.
+- La oleada se gana cuando caen todos los enemigos y se pierde cuando cae todo el escuadrón.
 
 ## 3. Los 12 patrones → mecánicas
 
-| # | Patrón | Dónde vive en el juego | Qué ve el jugador | Tipos obligatorios |
+| # | Patrón | Dónde está en el juego | Qué ve y hace el jugador | Tipos obligatorios |
 |---|---|---|---|---|
-| 1 | **Builder** | Hangar: se ensambla la nave de apoyo de la misión | Elige receta, ve la construcción paso a paso y la ficha de la nave; la nave da bonus en la misión (radar / fuego de apoyo / más botín) | `Nave`, `INaveBuilder`, `IngenieroJefe`, `RecetaExploradora`, `RecetaCombate`, `RecetaCarga` |
-| 2 | **Prototype** | Laboratorio: se clona un tripulante base para armar el escuadrón | Panel original vs. clon: se editan habilidades del clon y el original no cambia | `IPrototipo.Clonar()`, deep clone con `List<string> Habilidades` (sin `MemberwiseClone` como única estrategia) |
-| 3 | **Bridge** | Comunicaciones: pedir refuerzos/suministros a la Tierra | Combos tipo × cifrado en vivo; muestra el mensaje y el texto cifrado; peor cifrado = más chance de que el Enjambre lo intercepte | `Mensaje`, `ICifrado`, `MensajeTexto/Alerta/Emergencia`, `SinCifrado`, `CifradoAES`, `CifradoCuantico` |
-| 4 | **Facade** | Control Central: arranca cada misión, reacciona a ataques, cierra la partida | Tres botones y una consola que lista la secuencia coordinada de los 6 subsistemas | `ControlCentral` con `IniciarTurno()`, `EntrarEnEmergencia()`, `ApagarEstacion()` + 6 subsistemas |
-| 5 | **Flyweight** | Censo: 10.000 tripulantes de 5 especies, de ahí se reclutan | Contador "instancias de especie: 5", comparación de memoria con/sin Flyweight | `IEspecie`, `Tripulante`, `FabricaEspecies` (`Dictionary<string, IEspecie>`) |
-| 6 | **Proxy** | Bóveda: inteligencia sobre debilidades del Enjambre y códigos | Según el rol del personaje activo entra o es rechazado; tabla de intentos denegados (persistida en SQL) | `IBoveda`, `BovedaDatos`, `ProxyBoveda` |
-| 7 | **Chain of Responsibility** | Combate: todo daño recibido atraviesa las capas de defensa | Animación del recorrido del daño capa por capa; en la Armería se agregan/quitan/reordenan eslabones | `IManejadorDanio.Manejar(Danio)`, `Esquiva`, `Bloqueo`, `Armadura`, `Escudo`, `Vida` |
-| 8 | **Command** | Combate: cada acción del jugador es un comando | Botones Deshacer/Rehacer e historial del turno | `IComando`, `MoverComando`, `AtacarComando`, `CurarComando`, `ConstruirComando`, `GestorComandos` |
-| 9 | **Visitor** | Almacén: análisis del botín | Selector de visitante y resultado sobre el inventario (valor total, conteo de armas, envenenar armas, estadísticas) | `IVisitor`, `IItem.Aceptar()`, `Arma`, `Pocion`, `Armadura`, `CalculadorPrecio`, `ContadorArmas`, `AplicadorVeneno` |
-| 10 | **State** | Combate: estado de cada unidad | Color/ícono por estado y acciones deshabilitadas (Aturdido no actúa, Berserk pega más y recibe más…) | `IEstadoPersonaje` (`Atacar`, `Mover`, `RecibirDanio`), `Normal`, `Envenenado`, `Aturdido`, `Berserk` |
-| 11 | **Template Method** | Combate: estructura del turno según la clase de la unidad | Bitácora por etapas: inicio → decisión → acción → fin | `TurnoUnidad.EjecutarTurno()` no virtual, `TurnoSoldado`, `TurnoMedico`, `TurnoFrancotirador`, `TurnoComandante` |
-| 12 | **Strategy** | Combate: IA del Enjambre | Acción "Hackear" que cambia la IA de un enemigo en plena partida; panel con la decisión tomada y por qué | `IEstrategiaIA.DecidirAccion(Enemigo, Contexto)`, `IAAgresiva`, `IADefensiva`, `IAAleatoria`, `IACalculadora` |
+| 1 | **Builder** | Hangar: la nave de apoyo de la próxima oleada | Elige receta, ve el ensamblado paso a paso y la ficha de la nave. La nave da un bonus en la oleada (Exploradora: muestra la IA de los enemigos · Combate: disparo de apoyo · Carga: más créditos) | `Nave`, `INaveBuilder`, `IngenieroJefe`, `RecetaExploradora`, `RecetaCombate`, `RecetaCarga` |
+| 2 | **Prototype** | Laboratorio: clonar a un soldado para sumarlo al escuadrón | Original y clon lado a lado: se editan las habilidades del clon y el original no cambia | `IPrototipo.Clonar()`, deep clone con `List<string> Habilidades` (sin `MemberwiseClone` como única estrategia) |
+| 3 | **Bridge** | Comunicaciones: pedir refuerzos a la Tierra | Elige tipo de mensaje y cifrado y ve el texto cifrado. Sin cifrado es gratis pero el Enjambre puede interceptarlo y la próxima oleada viene más fuerte | `Mensaje`, `ICifrado`, `MensajeTexto/Alerta/Emergencia`, `SinCifrado`, `CifradoAES`, `CifradoCuantico` |
+| 4 | **Facade** | Control Central: arranca y cierra cada oleada | "Defender la oleada" dispara `EntrarEnEmergencia()`, al ganar se llama a `IniciarTurno()` y al perder a `ApagarEstacion()`. En el módulo se ve la secuencia de los 6 subsistemas | `ControlCentral` con `IniciarTurno()`, `EntrarEnEmergencia()`, `ApagarEstacion()` + 6 subsistemas |
+| 5 | **Flyweight** | Censo: los 10.000 tripulantes de 5 especies, de donde se recluta | Contador "objetos de especie creados: 5" y comparación de memoria con y sin Flyweight. La especie del recluta le da un bonus | `IEspecie`, `Tripulante`, `FabricaEspecies` (`Dictionary<string, IEspecie>`) |
+| 6 | **Proxy** | Bóveda: informe secreto sobre la próxima oleada | Con un rol autorizado se lee el informe (qué IA usa cada enemigo); si no, se rechaza y queda en el registro de intentos | `IBoveda`, `BovedaDatos`, `ProxyBoveda` |
+| 7 | **Chain of Responsibility** | Armería y cada golpe en la oleada | En la Armería se agregan, quitan y reordenan las capas. En combate se ve el recorrido del golpe capa por capa | `IManejadorDanio.Manejar(Danio)`, `Esquiva`, `Bloqueo`, `Armadura`, `Escudo`, `Vida` |
+| 8 | **Command** | Oleada: cada acción del jugador | Deshacer y rehacer dentro del turno, con historial. Mover es cambiar de fila y Construir levanta una barricada | `IComando`, `MoverComando`, `AtacarComando`, `CurarComando`, `ConstruirComando`, `GestorComandos` |
+| 9 | **Visitor** | Almacén: el botín de las oleadas | Elige un analizador: valor total para vender, contar armas o envenenar armas (los ataques pasan a envenenar) | `IVisitor`, `IItem.Aceptar()`, `Arma`, `Pocion`, `Armadura`, `CalculadorPrecio`, `ContadorArmas`, `AplicadorVeneno` |
+| 10 | **State** | Oleada: estado de cada unidad | Color e ícono por estado y acciones habilitadas: Aturdido pierde el turno, Envenenado pierde vida cada turno, Berserk pega y recibe más | `IEstadoPersonaje` (`Atacar`, `Mover`, `RecibirDanio`), `Normal`, `Envenenado`, `Aturdido`, `Berserk` |
+| 11 | **Template Method** | Oleada: el turno de cada unidad | Bitácora por etapas (inicio → decisión → acción → fin), distinta según la clase | `TurnoUnidad.EjecutarTurno()` no virtual, `TurnoSoldado`, `TurnoMedico`, `TurnoFrancotirador`, `TurnoComandante` |
+| 12 | **Strategy** | Oleada: la IA de cada enemigo | "Hackear" cambia la IA de un enemigo; un panel muestra qué decidió y por qué | `IEstrategiaIA.DecidirAccion(Enemigo, Contexto)`, `IAAgresiva`, `IADefensiva`, `IAAleatoria`, `IACalculadora` |
 
-Enganches entre patrones (para que no sean 12 demos sueltas): el veneno de `AplicadorVeneno` provoca el estado `Envenenado`; la nave del Builder modifica la misión; los clones del Laboratorio son las unidades del combate; la info de la Bóveda revela qué IA usa cada enemigo; `EntrarEnEmergencia()` se dispara cuando un mensaje es interceptado.
+Enganches entre patrones (para que no sean 12 demos sueltas): el Control Central arranca y cierra cada oleada; la nave del Hangar da un bonus en la oleada; los reclutas del Censo se clonan en el Laboratorio y forman el escuadrón; el informe de la Bóveda revela qué IA usa cada enemigo; un pedido de refuerzos interceptado hace más fuerte la oleada; las capas que se ordenan en la Armería son las que atraviesa cada golpe; el veneno del Almacén provoca el estado Envenenado.
 
 ## 4. Gamificación y recorrido (consigna 5.4)
 
-- [ ] Pantalla inicial con nombre del juego e integrantes
-- [ ] Tutorial de 3+ pantallas (estación, combate, progreso)
+- [x] Pantalla inicial con nombre del juego e integrantes
+- [ ] Tutorial de 3 pantallas: la historia y las 6 oleadas, la estación, el combate en dos filas
 - [ ] Ciclo acción → respuesta → progreso
 - [ ] XP, niveles, créditos y desbloqueos
 - [ ] Victoria y derrota definidas
@@ -74,7 +87,7 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el veneno de `Apli
 | Maite Stefania Benitez | pendiente | Prototype · Flyweight · State | Identidad visual y sonido |
 | María Belén Fiuza | pendiente | Bridge · Proxy | Persistencia SQL Server (`Kepler7.Data`, scripts `db/`) - se engancha con el registro de la Bóveda |
 | Carlos Joel Sánchez Quiroz | pendiente | Builder · Strategy · Template Method | README, publicación Release |
-| Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (XP, niveles, insignias) + pantallas inicial, tutorial y final |
+| Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (panel de logros, recompensas, subida de nivel) + tutorial y pantalla final |
 
 Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UML y párrafo del informe (ver "Definición de terminado" en docs/REGLAS.md). **Cada parte tiene que quedar funcionando dentro del juego** apenas se mergea, y se trabaja en varios commits (ver "Cada parte tiene que funcionar" en docs/REGLAS.md). Informe y PowerPoint se arman entre todos con esos párrafos; el diagrama UML general lo hace Ivan.
 
@@ -99,17 +112,18 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 - [ ] Confirmar con la cátedra: .NET 8, `Microsoft.Data.SqlClient` y MSTest
 
 **Fase 1 - Cimientos de Core** *(bloquea al resto; corta)*
-- [ ] Modelo base: `Unidad`, `Enemigo`, `Grilla`, `Danio`, `Contexto`, `IAleatorio`, `EntradaBitacora`
-- [ ] Interfaces de persistencia y modelo de progreso (XP, nivel, créditos, insignias)
-- [ ] Esqueleto de Game: formulario principal con navegación entre pantallas vacías
+- [x] Modelo base: `Unidad`, `Enemigo`, `CampoBatalla` (dos filas), `Danio`, `Contexto`, `IAleatorio`, `EntradaBitacora`
+- [x] Interfaces de persistencia y modelo de progreso (XP, nivel, créditos, insignias)
+- [x] Persistencia en memoria en `Kepler7.Data` mientras no esté SQL Server
+- [x] Esqueleto de Game: inicio, puente de mando con los 8 módulos (deshabilitados hasta que cada dueño conecte el suyo) y bitácora
 
 **Fase 2 - Patrones en paralelo** *(cada uno en su rama)*
 - [ ] Builder  [ ] Prototype  [ ] Bridge  [ ] Facade  [ ] Flyweight  [ ] Proxy
 - [ ] Chain of Resp.  [ ] Command  [ ] Visitor  [ ] State  [ ] Template Method  [ ] Strategy
 
 **Fase 3 - Integración**
-- [ ] Motor de combate completo uniendo Command + State + Strategy + Template + Chain
-- [ ] Campaña: 6 sectores + Núcleo, con victoria/derrota
+- [ ] Motor de combate en dos filas uniendo Command + State + Strategy + Template + Chain
+- [ ] Las 6 oleadas, con victoria y derrota, arrancadas y cerradas por el Control Central
 - [ ] Persistencia SQL funcionando de punta a punta
 - [ ] Gamificación e insignias conectadas
 
