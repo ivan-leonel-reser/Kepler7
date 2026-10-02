@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Entidades que se guardan y que viajan entre capas. No referencia a ningún otro proyecto. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

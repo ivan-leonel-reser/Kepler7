@@ -1,4 +1,4 @@
-using Kepler7.Core.Progreso;
+using Kepler7.BE;
 using Kepler7.Game.Pantallas;
 
 namespace Kepler7.Game;

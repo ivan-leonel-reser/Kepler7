@@ -1,3 +1,4 @@
+using Kepler7.BE;
 using Kepler7.Core.Comun;
 
 namespace Kepler7.Tests.Comun;

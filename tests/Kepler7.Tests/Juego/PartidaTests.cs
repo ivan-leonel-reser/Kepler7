@@ -1,5 +1,5 @@
+using Kepler7.BE;
 using Kepler7.Core.Juego;
-using Kepler7.Core.Progreso;
 using Kepler7.Tests.Dobles;
 
 namespace Kepler7.Tests.Juego;

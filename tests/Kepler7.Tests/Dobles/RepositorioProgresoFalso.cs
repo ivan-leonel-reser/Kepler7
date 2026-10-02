@@ -1,5 +1,4 @@
-using Kepler7.Core.Persistencia;
-using Kepler7.Core.Progreso;
+using Kepler7.BE;
 
 namespace Kepler7.Tests.Dobles;
 

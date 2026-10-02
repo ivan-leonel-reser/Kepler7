@@ -6,4 +6,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Kepler7.BE\Kepler7.BE.csproj" />
+  </ItemGroup>
+
 </Project>
