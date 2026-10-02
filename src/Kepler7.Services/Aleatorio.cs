@@ -1,4 +1,4 @@
-namespace Kepler7.Core.Comun;
+namespace Kepler7.Services;
 
 public class Aleatorio : IAleatorio
 {

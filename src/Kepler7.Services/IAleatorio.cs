@@ -1,4 +1,4 @@
-namespace Kepler7.Core.Comun;
+namespace Kepler7.Services;
 
 /// <summary>Fuente de azar del juego. Se inyecta para poder fijar los resultados en los tests.</summary>
 public interface IAleatorio
