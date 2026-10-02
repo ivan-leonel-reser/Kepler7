@@ -185,8 +185,8 @@ internal class PantallaOleada : Pantalla
             e.Graphics.FillRectangle(fondo, e.Bounds);
 
         if (e.Index >= 0 && _nuevaIA.Items[e.Index] is IEstrategiaIA ia)
-            TextRenderer.DrawText(e.Graphics, ia.Nombre, _nuevaIA.Font, e.Bounds,
-                _nuevaIA.Enabled ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+            TextRenderer.DrawText(e.Graphics, ia.Nombre, _nuevaIA.Font, e.Bounds, Tema.Texto,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
     }
 
     private void ClickEnUnidad(Unidad unidad)
@@ -326,6 +326,8 @@ internal class PantallaOleada : Pantalla
 
     private void RevisarLogros()
     {
+        // Primero lo que pasó en la oleada, así la insignia queda debajo de la jugada que la dio.
+        MostrarEntradasNuevas();
         foreach (var insignia in _partida.RevisarLogros())
             _consola.Agregar(new EntradaBitacora("Logros", $"Insignia desbloqueada: {insignia.Nombre}", TipoEntrada.Exito));
     }
@@ -349,7 +351,6 @@ internal class PantallaOleada : Pantalla
         _terminar.Enabled = turnoJugador;
         _hackear.Enabled = turnoJugador && _oleada.HackeosDisponibles > 0;
         _hackear.Text = _pendiente == AccionPendiente.Hackear ? "Cancelar hackeo" : $"Hackear IA (quedan {_oleada.HackeosDisponibles})";
-        _nuevaIA.Enabled = _hackear.Enabled;
 
         (_estado.Text, _estado.ForeColor) = _oleada.Estado switch
         {
@@ -374,7 +375,11 @@ internal class PantallaOleada : Pantalla
             _ => [],
         };
         _campo.Mostrar(actor, objetivos);
+        MostrarEntradasNuevas();
+    }
 
+    private void MostrarEntradasNuevas()
+    {
         var entradas = _oleada.Bitacora.Entradas;
         for (; _entradasMostradas < entradas.Count; _entradasMostradas++)
             _consola.Agregar(entradas[_entradasMostradas]);

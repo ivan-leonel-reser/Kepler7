@@ -33,6 +33,14 @@ internal class ConsolaBitacora : ListBox
             TopIndex = Items.Count - 1;
     }
 
+    // Lo que se carga antes de que la lista tenga tamaño no queda desplazado: se acomoda acá.
+    protected override void OnSizeChanged(EventArgs e)
+    {
+        base.OnSizeChanged(e);
+        if (Items.Count > 0)
+            TopIndex = Items.Count - 1;
+    }
+
     protected override void OnDrawItem(DrawItemEventArgs e)
     {
         using (var fondo = new SolidBrush(BackColor))
