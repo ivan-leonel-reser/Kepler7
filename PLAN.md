@@ -68,9 +68,9 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el Control Central
 
 - [x] Pantalla inicial con nombre del juego e integrantes
 - [ ] Tutorial de 3 pantallas: la historia y las 6 oleadas, la estación, el combate en dos filas
-- [ ] Ciclo acción → respuesta → progreso
+- [x] Ciclo acción → respuesta → progreso
 - [ ] XP, niveles, créditos y desbloqueos
-- [ ] Victoria y derrota definidas
+- [x] Victoria y derrota definidas
 - [ ] Panel de 12 insignias ("patrón dominado")
 - [ ] Persistencia en SQL Server (progreso, logros, registro de la Bóveda)
 - [ ] Feedback visual: `Timer`, flashes de color, transiciones, números de daño flotantes
@@ -83,11 +83,11 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el Control Central
 
 | Integrante | GitHub | Patrones | Transversal |
 |---|---|---|---|
-| Ivan Leonel Reser | `BabyPop666` | Facade · Command | Setup del repo y CI, arquitectura base, motor de combate, navegación entre pantallas |
-| Maite Stefania Benitez | pendiente | Prototype · Flyweight · State | Identidad visual y sonido |
-| María Belén Fiuza | pendiente | Bridge · Proxy | Persistencia SQL Server (`Kepler7.Data`, scripts `db/`) - se engancha con el registro de la Bóveda |
-| Carlos Joel Sánchez Quiroz | pendiente | Builder · Strategy · Template Method | README, publicación Release |
-| Agustin Villaverde | pendiente | Chain of Resp. · Visitor | Gamificación (panel de logros, recompensas, subida de nivel) + tutorial y pantalla final |
+| Ivan Leonel Reser | `ivan-leonel-reser` | Facade · Command | Setup del repo y CI, arquitectura base, motor de combate, navegación entre pantallas |
+| Maite Stefania Benitez | `MaiteMB` | Prototype · Flyweight · State | Identidad visual y sonido |
+| María Belén Fiuza | `belenfiuza1` | Bridge · Proxy | Persistencia SQL Server (`Kepler7.Data`, scripts `db/`) - se engancha con el registro de la Bóveda |
+| Carlos Joel Sánchez Quiroz | `kainheinlein` | Builder · Strategy · Template Method | README, publicación Release |
+| Agustin Villaverde | `VillaverdeAgustin` | Chain of Resp. · Visitor | Gamificación (panel de logros, recompensas, subida de nivel) + tutorial y pantalla final |
 
 Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UML y párrafo del informe (ver "Definición de terminado" en docs/REGLAS.md). **Cada parte tiene que quedar funcionando dentro del juego** apenas se mergea, y se trabaja en varios commits (ver "Cada parte tiene que funcionar" en docs/REGLAS.md). Informe y PowerPoint se arman entre todos con esos párrafos; el diagrama UML general lo hace Ivan.
 
@@ -104,7 +104,7 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 
 **Fase 0 - Setup** *(una persona, directo a `main`)*
 - [x] Repo privado en GitHub
-- [ ] Invitar a los 4 integrantes restantes: enviadas a `kainheinlein` y `NetworksProgram`; faltan Maite y Belén
+- [x] Invitar a los 4 integrantes restantes (Carlos y Agustín ya aceptaron; Maite y Belén tienen la invitación pendiente)
 - [ ] Cada integrante autoriza su cuenta en la PC del grupo ([docs/SUMARSE_AL_REPO.md](docs/SUMARSE_AL_REPO.md))
 - [x] `Kepler7.sln` con Core / Data / Game / Tests, `.gitignore`, `README.md` inicial
 - [x] GitHub Actions: `dotnet build` + `dotnet test` en cada PR
@@ -119,11 +119,13 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 
 **Fase 2 - Patrones en paralelo** *(cada uno en su rama)*
 - [ ] Builder  [ ] Prototype  [ ] Bridge  [x] Facade  [ ] Flyweight  [ ] Proxy
-- [ ] Chain of Resp.  [ ] Command  [ ] Visitor  [ ] State  [ ] Template Method  [ ] Strategy
+- [ ] Chain of Resp.  [x] Command  [ ] Visitor  [ ] State  [ ] Template Method  [ ] Strategy
 
 **Fase 3 - Integración**
-- [ ] Motor de combate en dos filas uniendo Command + State + Strategy + Template + Chain
-- [ ] Las 6 oleadas, con victoria y derrota, arrancadas y cerradas por el Control Central
+- [x] Motor de combate en dos filas con Command: oleada jugable, turno del Enjambre, victoria y derrota
+- [ ] Enganchar State, Strategy, Template Method y Chain al combate (puntos de enganche: `Unidad.RecibirGolpe`, `Oleada.JugarEnemigo`)
+- [x] Las 6 oleadas, con victoria y derrota, arrancadas y cerradas por el Control Central
+- [ ] Balancear la dificultad de las oleadas con los bonus de los módulos
 - [ ] Persistencia SQL funcionando de punta a punta
 - [ ] Gamificación e insignias conectadas
 

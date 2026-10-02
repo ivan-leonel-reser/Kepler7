@@ -30,7 +30,7 @@ internal class PantallaEstacion : Pantalla
 
         Controls.Add(CrearModulos(partida));
         Controls.Add(panelBitacora);
-        Controls.Add(CrearBarraInferior());
+        Controls.Add(CrearBarraInferior(partida));
         Controls.Add(CrearEncabezado(partida));
     }
 
@@ -128,7 +128,7 @@ internal class PantallaEstacion : Pantalla
         return panel;
     }
 
-    private Control CrearBarraInferior()
+    private Control CrearBarraInferior(Partida partida)
     {
         var barra = new FlowLayoutPanel
         {
@@ -141,10 +141,20 @@ internal class PantallaEstacion : Pantalla
         var menu = Tema.CrearBoton("Menú principal", 180);
         menu.Click += (_, _) => Principal.IrAInicio();
 
-        var defender = Tema.CrearBoton("Defender la oleada (en desarrollo)", 280);
-        defender.Enabled = false;
+        var defender = Tema.CrearBoton(TextoDefender(partida), 340);
+        defender.Enabled = partida.PuedeDefender;
+        defender.Click += (_, _) => Principal.Mostrar(new PantallaOleada(Principal));
 
         barra.Controls.AddRange([menu, defender]);
         return barra;
+    }
+
+    private static string TextoDefender(Partida partida)
+    {
+        if (partida.Progreso.EstacionSalvada)
+            return "Kepler-7 está a salvo";
+        return partida.ControlCentral.Modo == ModoEstacion.Operativa
+            ? $"Defender la oleada {partida.NumeroProximaOleada}"
+            : $"Oleada {partida.NumeroProximaOleada}: primero iniciá un turno";
     }
 }

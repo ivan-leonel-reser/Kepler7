@@ -31,6 +31,13 @@ public abstract class Unidad
     /// <summary>Cuerpo a cuerpo solo se ataca desde adelante; a distancia, desde cualquier fila.</summary>
     public bool PuedeAtacar => EstaViva && (AtacaADistancia || Fila == Fila.Vanguardia);
 
+    /// <summary>
+    /// Todo golpe en combate entra por acá. Por ahora va directo a la vida;
+    /// las capas de defensa (Chain) y los estados (State) se enganchan en este punto.
+    /// </summary>
+    /// <returns>Cuánta vida perdió realmente.</returns>
+    public virtual int RecibirGolpe(Danio danio) => PerderVida(danio.Restante);
+
     /// <summary>Resta vida sin pasar por las defensas. Devuelve cuánta vida perdió realmente.</summary>
     public int PerderVida(int cantidad)
     {
