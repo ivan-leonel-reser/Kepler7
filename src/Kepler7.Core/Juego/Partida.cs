@@ -127,6 +127,9 @@ public class Partida
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));
 
+        if (OleadaActual is { } actual && actual.ClasesQueJugaron.Count == Enum.GetValues<ClaseUnidad>().Length)
+            Sumar(nuevas, OtorgarInsignia(Patron.TemplateMethod));
+
         if (OleadaActual is { HackeosRealizados: > 0 })
             Sumar(nuevas, OtorgarInsignia(Patron.Strategy));
 

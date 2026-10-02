@@ -115,6 +115,25 @@ public class PartidaOleadasTests
     }
 
     [TestMethod]
+    public void JugarConLasCuatroClasesDaLaInsigniaDeTemplateMethod()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        var comandante = _partida.Escuadron.Single(u => u.Clase == ClaseUnidad.Comandante);
+        var soldado = _partida.Escuadron.Single(u => u.Clase == ClaseUnidad.Soldado);
+        var medico = _partida.Escuadron.Single(u => u.Clase == ClaseUnidad.Medico);
+        var francotirador = _partida.Escuadron.Single(u => u.Clase == ClaseUnidad.Francotirador);
+
+        oleada.Atacar(comandante, oleada.ObjetivosDeAtaque(comandante)[0]);
+        oleada.Mover(soldado);
+        oleada.Mover(medico);
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.TemplateMethod));
+
+        oleada.Atacar(francotirador, oleada.ObjetivosDeAtaque(francotirador)[0]);
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.TemplateMethod));
+    }
+
+    [TestMethod]
     public void HackearUnEnemigoDaLaInsigniaDeStrategy()
     {
         _partida.ControlCentral.IniciarTurno();
