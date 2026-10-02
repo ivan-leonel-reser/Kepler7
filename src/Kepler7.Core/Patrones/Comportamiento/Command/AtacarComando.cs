@@ -5,12 +5,15 @@ namespace Kepler7.Core.Patrones.Comportamiento.Command;
 public class AtacarComando : IComando
 {
     private readonly Unidad _objetivo;
+    private readonly int _bonus;
     private int _vidaQuitada;
 
-    public AtacarComando(Unidad atacante, Unidad objetivo)
+    /// <param name="bonus">Daño extra de este ataque, por encima del ataque de la unidad.</param>
+    public AtacarComando(Unidad atacante, Unidad objetivo, int bonus = 0)
     {
         Actor = atacante;
         _objetivo = objetivo;
+        _bonus = bonus;
     }
 
     public Unidad Actor { get; }
@@ -18,7 +21,7 @@ public class AtacarComando : IComando
 
     public void Ejecutar()
     {
-        _vidaQuitada = _objetivo.RecibirGolpe(new Danio(Actor.Ataque, TipoDanio.Fisico, Actor));
+        _vidaQuitada = _objetivo.RecibirGolpe(new Danio(Actor.Ataque + _bonus, TipoDanio.Fisico, Actor));
         Descripcion = _objetivo.EstaViva
             ? $"{Actor.Nombre} ataca a {_objetivo.Nombre} (-{_vidaQuitada})"
             : $"{Actor.Nombre} derriba a {_objetivo.Nombre} (-{_vidaQuitada})";
