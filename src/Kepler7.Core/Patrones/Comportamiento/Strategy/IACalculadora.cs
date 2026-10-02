@@ -25,7 +25,7 @@ public class IACalculadora : IEstrategiaIA
             .OrderByDescending(u => u.Ataque)
             .FirstOrDefault();
         if (remate is not null)
-            return DecisionIA.Atacar(remate, $"lo derriba de un golpe (vida {remate.Vida}, ataque {enemigo.Ataque})");
+            return DecisionIA.Atacar(remate, $"lo derriba de un golpe (vida {remate.Vida})");
 
         var objetivo = atacables
             .OrderBy(u => GolpesParaDerribar(u, enemigo))

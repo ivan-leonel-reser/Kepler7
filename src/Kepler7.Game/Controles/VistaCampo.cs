@@ -154,6 +154,11 @@ internal class VistaCampo : Control
         if (yaActuo)
             TextRenderer.DrawText(g, "YA ACTUÓ", Tema.Chica, new Rectangle(zona.X, zona.Y + 64, zona.Width - 10, 18),
                 Tema.TextoTenue, TextFormatFlags.Right);
+        // La IA de un enemigo no se ve hasta que se la revela (por ejemplo, al hackearlo).
+        if (unidad is Enemigo enemigo)
+            TextRenderer.DrawText(g, enemigo.IARevelada ? $"IA {enemigo.Estrategia.Nombre}" : "IA ???", Tema.Chica,
+                new Rectangle(zona.X, zona.Y + 64, zona.Width - 10, 18),
+                enemigo.IARevelada ? Tema.Acento : Tema.TextoTenue, TextFormatFlags.Right);
     }
 
     private static string Detalle(Unidad unidad) => unidad switch

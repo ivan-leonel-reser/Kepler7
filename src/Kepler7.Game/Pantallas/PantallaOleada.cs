@@ -1,6 +1,7 @@
 using Kepler7.Core.Combate;
 using Kepler7.Core.Comun;
 using Kepler7.Core.Juego;
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Progreso;
 using Kepler7.Game.Controles;
 
@@ -12,7 +13,7 @@ namespace Kepler7.Game.Pantallas;
 /// </summary>
 internal class PantallaOleada : Pantalla
 {
-    private enum AccionPendiente { Ninguna, Atacar, Curar }
+    private enum AccionPendiente { Ninguna, Atacar, Curar, Hackear }
 
     private readonly Partida _partida;
     private readonly Oleada _oleada;
@@ -20,6 +21,19 @@ internal class PantallaOleada : Pantalla
     private readonly ConsolaBitacora _consola = new() { Dock = DockStyle.Fill };
     private readonly ListBox _accionesTurno = CrearLista(104);
     private readonly ListBox _historial = CrearLista(80);
+    private readonly ListBox _decisionesIA = CrearLista(72);
+    private readonly ComboBox _nuevaIA = new()
+    {
+        Width = 200,
+        DropDownStyle = ComboBoxStyle.DropDownList,
+        DrawMode = DrawMode.OwnerDrawFixed,
+        FlatStyle = FlatStyle.Flat,
+        BackColor = Tema.Panel,
+        ForeColor = Tema.Texto,
+        Font = Tema.Normal,
+        Margin = new Padding(4, 0, 4, 4),
+    };
+    private readonly Button _hackear = Tema.CrearBoton("Hackear IA", 200);
     private readonly Label _estado = Tema.CrearEtiqueta("", Tema.Destacado);
     private readonly Label _ayuda = Tema.CrearEtiqueta("", Tema.Normal, Tema.Texto);
     private readonly Button _mover = Tema.CrearBoton("Cambiar de fila", 330);
@@ -56,6 +70,8 @@ internal class PantallaOleada : Pantalla
         _deshacer.Click += (_, _) => Deshacer();
         _rehacer.Click += (_, _) => DespuesDeActuar(_oleada.Rehacer() is not null);
         _terminar.Click += (_, _) => TerminarTurno();
+        _hackear.Click += (_, _) => Elegir(_pendiente == AccionPendiente.Hackear ? AccionPendiente.Ninguna : AccionPendiente.Hackear);
+        _nuevaIA.SelectedIndexChanged += (_, _) => Refrescar();
         _botonResultado.Click += (_, _) => _alCerrar();
         _turnoEnjambre.Tick += (_, _) => JugarEnemigo();
 
@@ -114,11 +130,12 @@ internal class PantallaOleada : Pantalla
         zonaBoton.Controls.Add(_botonResultado);
         _resultado.Controls.AddRange([zonaBoton, _mensajeResultado]);
 
-        var zonaBitacora = new Panel { Dock = DockStyle.Bottom, Height = 150, Padding = new Padding(16, 4, 16, 8) };
+        var zonaBitacora = new Panel { Dock = DockStyle.Bottom, Height = 120, Padding = new Padding(16, 4, 16, 8) };
         zonaBitacora.Controls.Add(_consola);
 
         var centro = new Panel { Dock = DockStyle.Fill };
         centro.Controls.Add(_campo);
+        centro.Controls.Add(ArmarPanelIA());
         centro.Controls.Add(zonaBitacora);
         centro.Controls.Add(_resultado);
 
@@ -127,10 +144,64 @@ internal class PantallaOleada : Pantalla
         Controls.Add(encabezado);
     }
 
+    // Panel de Strategy: a la izquierda lo que decidió cada enemigo, a la derecha el hackeo.
+    private Panel ArmarPanelIA()
+    {
+        _nuevaIA.Items.AddRange(CatalogoEstrategias.Todas.ToArray<object>());
+        _nuevaIA.DisplayMember = nameof(IEstrategiaIA.Nombre);
+        _nuevaIA.SelectedIndex = 0;
+        _nuevaIA.DrawItem += DibujarOpcionIA;
+        _hackear.Height = 34;
+
+        var tituloHackeo = Tema.CrearEtiqueta("HACKEAR · NUEVA IA", Tema.Chica, Tema.TextoTenue);
+        tituloHackeo.Margin = new Padding(4, 2, 3, 3);
+        var hackeo = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 216, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        hackeo.Controls.AddRange([tituloHackeo, _nuevaIA, _hackear]);
+
+        _decisionesIA.Dock = DockStyle.Fill;
+        var decisiones = new Panel { Dock = DockStyle.Fill };
+        decisiones.Controls.Add(_decisionesIA);
+        decisiones.Controls.Add(new Label
+        {
+            Text = "IA DEL ENJAMBRE · QUÉ DECIDIÓ CADA ENEMIGO Y POR QUÉ",
+            Dock = DockStyle.Top,
+            Height = 20,
+            Font = Tema.Chica,
+            ForeColor = Tema.TextoTenue,
+        });
+
+        var panel = new Panel { Dock = DockStyle.Bottom, Height = 100, Padding = new Padding(16, 4, 12, 0) };
+        panel.Controls.Add(decisiones);
+        panel.Controls.Add(hackeo);
+        return panel;
+    }
+
+    // El combo estándar se pinta claro y no se lee sobre el fondo oscuro.
+    private void DibujarOpcionIA(object? sender, DrawItemEventArgs e)
+    {
+        var resaltada = (e.State & DrawItemState.Selected) != 0 && (e.State & DrawItemState.ComboBoxEdit) == 0;
+        using (var fondo = new SolidBrush(resaltada ? Tema.PanelResaltado : Tema.Panel))
+            e.Graphics.FillRectangle(fondo, e.Bounds);
+
+        if (e.Index >= 0 && _nuevaIA.Items[e.Index] is IEstrategiaIA ia)
+            TextRenderer.DrawText(e.Graphics, ia.Nombre, _nuevaIA.Font, e.Bounds,
+                _nuevaIA.Enabled ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+    }
+
     private void ClickEnUnidad(Unidad unidad)
     {
         if (_oleada.Estado != EstadoOleada.TurnoJugador)
             return;
+
+        if (_pendiente == AccionPendiente.Hackear && unidad is Enemigo enemigo
+            && _oleada.PuedeHackear(enemigo) && _nuevaIA.SelectedItem is IEstrategiaIA nuevaIA)
+        {
+            _oleada.Hackear(enemigo, nuevaIA);
+            _pendiente = AccionPendiente.Ninguna;
+            RevisarLogros();
+            Refrescar();
+            return;
+        }
 
         var actor = _seleccionada;
         if (actor is not null && _pendiente == AccionPendiente.Atacar && _oleada.ObjetivosDeAtaque(actor).Contains(unidad))
@@ -275,6 +346,9 @@ internal class PantallaOleada : Pantalla
         _deshacer.Enabled = turnoJugador && _oleada.Comandos.PuedeDeshacer;
         _rehacer.Enabled = turnoJugador && _oleada.Comandos.PuedeRehacer;
         _terminar.Enabled = turnoJugador;
+        _hackear.Enabled = turnoJugador && _oleada.HackeosDisponibles > 0;
+        _hackear.Text = _pendiente == AccionPendiente.Hackear ? "Cancelar hackeo" : $"Hackear IA (quedan {_oleada.HackeosDisponibles})";
+        _nuevaIA.Enabled = _hackear.Enabled;
 
         (_estado.Text, _estado.ForeColor) = _oleada.Estado switch
         {
@@ -287,11 +361,15 @@ internal class PantallaOleada : Pantalla
 
         Llenar(_accionesTurno, _oleada.Comandos.AccionesDelTurno.Select(c => c.Descripcion));
         Llenar(_historial, _oleada.Comandos.Historial.Reverse());
+        Llenar(_decisionesIA, _oleada.UltimasJugadas.Count > 0
+            ? _oleada.UltimasJugadas.Select(TextoDecision)
+            : ["Todavía no jugó el Enjambre. Cuando juegue, acá queda qué decidió cada enemigo."]);
 
-        IReadOnlyCollection<Unidad> objetivos = actor is null ? [] : _pendiente switch
+        IReadOnlyCollection<Unidad> objetivos = _pendiente switch
         {
-            AccionPendiente.Atacar => _oleada.ObjetivosDeAtaque(actor),
-            AccionPendiente.Curar => _oleada.ObjetivosDeCuracion(actor),
+            AccionPendiente.Hackear => _oleada.Campo.UnidadesVivasDe(Bando.Enjambre).ToList(),
+            AccionPendiente.Atacar when actor is not null => _oleada.ObjetivosDeAtaque(actor),
+            AccionPendiente.Curar when actor is not null => _oleada.ObjetivosDeCuracion(actor),
             _ => [],
         };
         _campo.Mostrar(actor, objetivos);
@@ -307,6 +385,8 @@ internal class PantallaOleada : Pantalla
             return "El Enjambre está jugando...";
         if (_oleada.Terminada)
             return "";
+        if (_pendiente == AccionPendiente.Hackear && _nuevaIA.SelectedItem is IEstrategiaIA ia)
+            return $"Hackeo con IA {ia.Nombre}. {ia.Descripcion} Elegí un enemigo (en amarillo); no se puede deshacer.";
         if (actor is null)
             return _oleada.Escuadron.Any(_oleada.PuedeActuar)
                 ? "Elegí una unidad de tu escuadrón."
@@ -320,6 +400,19 @@ internal class PantallaOleada : Pantalla
                 $"{actor.Nombre} ({actor.Clase}) está atrás: cuerpo a cuerpo solo ataca desde adelante.",
             _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción.",
         };
+    }
+
+    private static string TextoDecision(JugadaEnemiga jugada)
+    {
+        var ia = jugada.Enemigo.IARevelada ? jugada.IA : "???";
+        var accion = jugada.Decision.Accion switch
+        {
+            AccionIA.Atacar => $"ataca a {jugada.Objetivo?.Nombre}",
+            AccionIA.Avanzar => "avanza",
+            AccionIA.Retroceder => "se repliega",
+            _ => "espera",
+        };
+        return $"{jugada.Enemigo.Nombre} [IA {ia}] {accion}: {jugada.Decision.Motivo}";
     }
 
     private static Label Seccion(string texto)

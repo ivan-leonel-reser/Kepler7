@@ -18,7 +18,7 @@ public partial class FormPrincipal : Form
 
         Text = InfoJuego.Titulo;
         ClientSize = new Size(1180, 740);
-        MinimumSize = new Size(1000, 680);
+        MinimumSize = new Size(1100, 750);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Tema.Fondo;
 

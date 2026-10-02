@@ -30,6 +30,6 @@ public class IADefensiva : IEstrategiaIA
         var objetivo = contexto.AtacableMasDebil(enemigo);
         return objetivo is null
             ? DecisionIA.Esperar("no tiene a quién atacar")
-            : DecisionIA.Atacar(objetivo, $"no se arriesga, va por el más débil (vida {objetivo.Vida})");
+            : DecisionIA.Atacar(objetivo, $"va por el más débil (vida {objetivo.Vida})");
     }
 }
