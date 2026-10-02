@@ -119,7 +119,7 @@ Cada dueño entrega de su patrón: código en Core, tests, pantalla, diagrama UM
 
 **Fase 2 - Patrones en paralelo** *(cada uno en su rama)*
 - [ ] Builder  [ ] Prototype  [ ] Bridge  [x] Facade  [ ] Flyweight  [ ] Proxy
-- [ ] Chain of Resp.  [x] Command  [ ] Visitor  [ ] State  [ ] Template Method  [x] Strategy
+- [ ] Chain of Resp.  [x] Command  [ ] Visitor  [ ] State  [x] Template Method  [x] Strategy
 
 **Fase 3 - Integración**
 - [x] Motor de combate en dos filas con Command: oleada jugable, turno del Enjambre, victoria y derrota
