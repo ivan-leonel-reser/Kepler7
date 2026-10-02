@@ -59,6 +59,7 @@ public class TemplateMethodTests
         Assert.IsInstanceOfType<TurnoMedico>(TurnoUnidad.Para(_medico, _campo));
         Assert.IsInstanceOfType<TurnoFrancotirador>(TurnoUnidad.Para(_francotirador, _campo));
         Assert.IsInstanceOfType<TurnoComandante>(TurnoUnidad.Para(_comandante, _campo));
+        StringAssert.Contains(TurnoUnidad.Para(_francotirador, _campo).Habilidad, "apunta");
     }
 
     [TestMethod]

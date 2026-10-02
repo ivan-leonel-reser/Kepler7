@@ -9,6 +9,8 @@ public class TurnoComandante : TurnoUnidad
     {
     }
 
+    public override string Habilidad => "Al atacar suma +1 de daño por cada aliado en su fila.";
+
     private int EnemigosEnPie => Campo.UnidadesVivasDe(Bando.Enjambre).Count();
 
     protected override string Iniciar() => $"evalúa el campo: {EnemigosEnPie} enemigos en pie";

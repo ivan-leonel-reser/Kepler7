@@ -11,6 +11,8 @@ public class TurnoFrancotirador : TurnoUnidad
     {
     }
 
+    public override string Habilidad => $"Desde atrás apunta: +{BonusApuntado} de daño.";
+
     protected override string Iniciar() =>
         Unidad.Fila == Fila.Retaguardia ? "está a cubierto atrás y puede apuntar" : "está adelante, sin tiempo para apuntar";
 

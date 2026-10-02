@@ -46,6 +46,9 @@ public abstract class TurnoUnidad
         return comando;
     }
 
+    /// <summary>Lo que distingue el turno de esta clase, para mostrárselo al jugador.</summary>
+    public abstract string Habilidad { get; }
+
     protected abstract string Iniciar();
 
     /// <summary>Acá cada clase interpreta la orden y, si corresponde, carga su <see cref="Bonus"/>.</summary>

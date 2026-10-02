@@ -2,6 +2,7 @@ using Kepler7.Core.Combate;
 using Kepler7.Core.Comun;
 using Kepler7.Core.Juego;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
+using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
 using Kepler7.Core.Progreso;
 using Kepler7.Game.Controles;
 
@@ -398,7 +399,7 @@ internal class PantallaOleada : Pantalla
             AccionPendiente.Curar => $"{actor.Nombre}: elegí a quién curar (en amarillo).",
             _ when !actor.PuedeAtacar && !actor.AtacaADistancia =>
                 $"{actor.Nombre} ({actor.Clase}) está atrás: cuerpo a cuerpo solo ataca desde adelante.",
-            _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción.",
+            _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción. {TurnoUnidad.Para(actor, _oleada.Campo).Habilidad}",
         };
     }
 

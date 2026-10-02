@@ -11,6 +11,8 @@ public class TurnoSoldado : TurnoUnidad
     {
     }
 
+    public override string Habilidad => $"Al atacar carga: +{BonusCarga} de daño.";
+
     protected override string Iniciar() =>
         Unidad.Fila == Fila.Vanguardia ? "está adelante, listo para cargar" : "está atrás, sin nadie a su alcance";
 

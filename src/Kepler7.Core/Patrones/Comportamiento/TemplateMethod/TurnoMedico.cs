@@ -11,6 +11,8 @@ public class TurnoMedico : TurnoUnidad
     {
     }
 
+    public override string Habilidad => $"A un herido grave lo cura +{BonusUrgencia}.";
+
     protected override string Iniciar()
     {
         var herido = Campo.UnidadesVivasDe(Bando.Escuadron)
