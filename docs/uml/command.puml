@@ -41,16 +41,20 @@ package "Kepler7.Core" {
   class CurarComando
   class ConstruirComando
 
+  abstract class TurnoUnidad
+
   class CampoBatalla <<receptor>>
   class Unidad <<receptor>>
 }
 
 PantallaOleada --> Oleada : acciones del jugador
 Oleada --> GestorComandos
-Oleada ..> MoverComando : crea
-Oleada ..> AtacarComando : crea
-Oleada ..> CurarComando : crea
-Oleada ..> ConstruirComando : crea
+Oleada ..> TurnoUnidad : orden validada
+TurnoUnidad ..> GestorComandos : Ejecutar(comando)
+TurnoUnidad ..> MoverComando : crea
+TurnoUnidad ..> AtacarComando : crea
+TurnoUnidad ..> CurarComando : crea
+TurnoUnidad ..> ConstruirComando : crea
 GestorComandos o-- "*" IComando
 
 MoverComando ..|> IComando
