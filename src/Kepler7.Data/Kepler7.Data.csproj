@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Implementación SQL Server de las interfaces de persistencia de Core.
-       Pendiente: Microsoft.Data.SqlClient, cuando la cátedra confirme que está permitido (ver PLAN.md). -->
+       Pendiente: Microsoft.Data.SqlClient, cuando la cátedra confirme que está permitido. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>

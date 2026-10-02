@@ -29,11 +29,3 @@ dotnet run --project src/Kepler7.Game
 | `src/Kepler7.Game` | Interfaz Windows Forms |
 | `tests/Kepler7.Tests` | Pruebas automatizadas de Core |
 | `db/` | Scripts de creación de la base |
-| `docs/` | Consigna, UML, informe, guía de Git |
-
-## Para el equipo
-
-- [PLAN.md](PLAN.md) - plan, reparto de patrones y fechas
-- [docs/REGLAS.md](docs/REGLAS.md) - reglas del proyecto
-- [docs/GUIA_GIT.md](docs/GUIA_GIT.md) - cómo clonar, crear tu rama y abrir un PR
-- [docs/SUMARSE_AL_REPO.md](docs/SUMARSE_AL_REPO.md) - cómo dar de alta tu cuenta en la PC del grupo
