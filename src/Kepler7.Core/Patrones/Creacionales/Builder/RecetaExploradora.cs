@@ -37,7 +37,7 @@ public class RecetaExploradora : INaveBuilder
     public void InstalarRadar()
     {
         _nave.Radar = true;
-        _nave.Montar("Radar", "Barrido profundo: lee las señales del Enjambre");
+        _nave.Montar("Radar", "Barrido profundo de señales del Enjambre");
     }
 
     public void InstalarIA()
