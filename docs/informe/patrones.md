@@ -24,13 +24,25 @@ Diagrama: [`docs/uml/facade.puml`](../uml/facade.puml)
 
 **Problema.** En cada turno el jugador mueve, ataca, cura o construye con cada unidad, y queríamos que pudiera arrepentirse antes de terminar el turno. Si cada botón cambiara el estado directamente, para deshacer habría que saber qué hizo cada uno y cómo revertirlo, y todo eso terminaría mezclado en la pantalla.
 
-**Solución.** Cada acción es un objeto que implementa `IComando` (`Ejecutar()` y `Deshacer()`): `MoverComando`, `AtacarComando`, `CurarComando` y `ConstruirComando`. Cada comando guarda lo necesario para volver atrás (la fila de origen, la vida que quitó, la barricada que levantó). `GestorComandos` es el invocador: los ejecuta y los apila, con una pila para deshacer y otra para rehacer. Al terminar el turno los comandos pasan al historial y ya no se pueden deshacer. `Oleada` valida la acción y crea el comando; la pantalla solo le dice qué eligió el jugador.
+**Solución.** Cada acción es un objeto que implementa `IComando` (`Ejecutar()` y `Deshacer()`): `MoverComando`, `AtacarComando`, `CurarComando` y `ConstruirComando`. Cada comando guarda lo necesario para volver atrás (la fila de origen, la vida que quitó, la barricada que levantó). `GestorComandos` es el invocador: los ejecuta y los apila, con una pila para deshacer y otra para rehacer. Al terminar el turno los comandos pasan al historial y ya no se pueden deshacer. `Oleada` valida la acción y el turno de la unidad (`TurnoUnidad`, ver Template Method) crea el comando; la pantalla solo le dice qué eligió el jugador.
 
 **Dónde se ve.** En la pantalla de la oleada. La lista "Este turno" muestra los comandos que todavía se pueden deshacer; los botones Deshacer y Rehacer los recorren; el "Historial de comandos" muestra lo confirmado en turnos anteriores. Al deshacer, la unidad vuelve a quedar libre para actuar. Deshacer y rehacer una jugada da la insignia "Dueño del tiempo".
 
 **Pruebas.** `CommandTests` verifica que cada comando se deshaga bien (incluso revivir a un enemigo que había caído) y el orden de las pilas; `OleadaTests` y `PartidaOleadasTests` prueban el turno completo y la insignia.
 
 Diagrama: [`docs/uml/command.puml`](../uml/command.puml)
+
+### Template Method - Turno de cada unidad
+
+**Problema.** El turno de cualquier unidad del escuadrón tiene la misma forma: se prepara, interpreta la orden, actúa y cierra. Lo que cambia es qué hace cada clase en cada etapa. Si cada clase escribiera su turno completo, el orden quedaría repetido cuatro veces y bastaría un descuido para que una clase actuara antes de decidir o se salteara el registro de una etapa.
+
+**Solución.** `TurnoUnidad` es abstracta y tiene el método plantilla `EjecutarTurno()`, que no es virtual: llama siempre a `Iniciar()`, `Decidir(orden)`, crea y ejecuta el comando, y termina con `Finalizar()`, registrando cada etapa en la bitácora. `Iniciar()` y `Decidir()` son abstractos y `Finalizar()` es virtual con un comportamiento por defecto. Las subclases solo completan esos pasos: `TurnoSoldado` carga al atacar (+2 de daño), `TurnoFrancotirador` apunta si dispara desde atrás (+3), `TurnoMedico` revisa quién es el más herido y cura +5 a un herido grave, y `TurnoComandante` evalúa el campo y suma +1 de daño por cada aliado en su fila. El bonus que se decide va adentro del comando, así que deshacer la jugada también lo deshace. `Oleada` valida la orden del jugador y le pide el turno a `TurnoUnidad.Para(unidad)`.
+
+**Dónde se ve.** En la pantalla de la oleada, cada acción del escuadrón deja en la bitácora sus cuatro etapas con el nombre de la unidad (inicio, decisión, acción y fin), y el texto cambia según la clase. Al elegir una unidad, el panel de acciones muestra la habilidad de su clase. Jugar un turno con las cuatro clases en una misma oleada da la insignia "Cadena de mando".
+
+**Pruebas.** `TemplateMethodTests` verifica que `EjecutarTurno()` no sea virtual, que las etapas queden siempre en el mismo orden y el bonus de cada clase; `OleadaTests` comprueba que una acción real deja las cuatro etapas y que deshacer devuelve todo el daño.
+
+Diagrama: [`docs/uml/template-method.puml`](../uml/template-method.puml)
 
 ### Strategy - IA de los enemigos
 
