@@ -83,7 +83,7 @@ Enganches entre patrones (para que no sean 12 demos sueltas): el Control Central
 
 | Integrante | GitHub | Patrones | Transversal |
 |---|---|---|---|
-| Ivan Leonel Reser | `BabyPop666` | Facade · Command | Setup del repo y CI, arquitectura base, motor de combate, navegación entre pantallas |
+| Ivan Leonel Reser | `ivan-leonel-reser` | Facade · Command | Setup del repo y CI, arquitectura base, motor de combate, navegación entre pantallas |
 | Maite Stefania Benitez | `MaiteMB` | Prototype · Flyweight · State | Identidad visual y sonido |
 | María Belén Fiuza | `belenfiuza1` | Bridge · Proxy | Persistencia SQL Server (`Kepler7.Data`, scripts `db/`) - se engancha con el registro de la Bóveda |
 | Carlos Joel Sánchez Quiroz | `kainheinlein` | Builder · Strategy · Template Method | README, publicación Release |
