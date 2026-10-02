@@ -1,4 +1,5 @@
 using Kepler7.Core.Combate;
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Progreso;
 
 namespace Kepler7.Tests.Combate;
@@ -32,5 +33,16 @@ public class GeneradorOleadasTests
     {
         Assert.IsTrue(GeneradorOleadas.Crear(6).Any(e => e.Nombre == "Reina del Enjambre"));
         Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => GeneradorOleadas.Crear(7));
+    }
+
+    [TestMethod]
+    public void CadaTipoDeEnemigoLlegaConSuIA()
+    {
+        var todos = Enumerable.Range(1, ProgresoJugador.OleadasTotales).SelectMany(GeneradorOleadas.Crear).ToList();
+
+        Assert.IsTrue(todos.Where(e => e.Nombre.StartsWith("Zángano")).All(e => e.Estrategia is IAAgresiva));
+        Assert.IsTrue(todos.Where(e => e.Nombre.StartsWith("Escupidor")).All(e => e.Estrategia is IAAleatoria));
+        Assert.IsTrue(todos.Where(e => e.Nombre.StartsWith("Coloso")).All(e => e.Estrategia is IADefensiva));
+        Assert.IsInstanceOfType<IACalculadora>(todos.Single(e => e.Nombre.StartsWith("Reina")).Estrategia);
     }
 }

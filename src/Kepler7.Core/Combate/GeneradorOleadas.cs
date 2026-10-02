@@ -1,3 +1,4 @@
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Progreso;
 
 namespace Kepler7.Core.Combate;
@@ -6,6 +7,7 @@ namespace Kepler7.Core.Combate;
 public static class GeneradorOleadas
 {
     // Z = Zángano (cuerpo a cuerpo), E = Escupidor (a distancia), C = Coloso (aguanta mucho), R = Reina.
+    // Cada tipo llega con su IA: agresiva, aleatoria, defensiva y calculadora, en ese orden.
     private static readonly string[] Composicion = ["ZZ", "ZZE", "ZCE", "ZZCE", "ZCCEE", "RZEE"];
 
     public static IReadOnlyList<Enemigo> Crear(int numeroOleada)
@@ -25,10 +27,10 @@ public static class GeneradorOleadas
 
     private static Enemigo CrearEnemigo(char tipo, int numero, int oleada) => tipo switch
     {
-        'Z' => new Enemigo($"Zángano {numero}", vidaMaxima: 10 + 2 * oleada, ataque: 2 + oleada / 2),
-        'E' => new Enemigo($"Escupidor {numero}", vidaMaxima: 8 + oleada, ataque: 2 + oleada / 2, atacaADistancia: true),
-        'C' => new Enemigo($"Coloso {numero}", vidaMaxima: 20 + 3 * oleada, ataque: 3 + oleada / 2),
-        'R' => new Enemigo("Reina del Enjambre", vidaMaxima: 55, ataque: 8),
+        'Z' => new Enemigo($"Zángano {numero}", vidaMaxima: 10 + 2 * oleada, ataque: 2 + oleada / 2, estrategia: new IAAgresiva()),
+        'E' => new Enemigo($"Escupidor {numero}", vidaMaxima: 8 + oleada, ataque: 2 + oleada / 2, atacaADistancia: true, estrategia: new IAAleatoria()),
+        'C' => new Enemigo($"Coloso {numero}", vidaMaxima: 20 + 3 * oleada, ataque: 3 + oleada / 2, estrategia: new IADefensiva()),
+        'R' => new Enemigo("Reina del Enjambre", vidaMaxima: 55, ataque: 8, estrategia: new IACalculadora()),
         _ => throw new ArgumentOutOfRangeException(nameof(tipo)),
     };
 }
