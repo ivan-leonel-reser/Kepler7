@@ -5,7 +5,7 @@ Las reglas completas están en [REGLAS.md](REGLAS.md). Esto es el paso a paso.
 ## Una sola vez
 
 ```bash
-git clone https://github.com/BabyPop666/Kepler7.git
+git clone https://github.com/ivan-leonel-reser/Kepler7.git
 cd Kepler7
 dotnet build Kepler7.sln
 dotnet test

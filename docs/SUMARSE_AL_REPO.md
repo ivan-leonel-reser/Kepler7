@@ -12,7 +12,7 @@ Solo el usuario de GitHub (el que aparece en tu perfil, ej. `juanperez`). No hac
 
 ## 3. Aceptá la invitación al repo
 
-Te llega un mail de GitHub. Si no lo encontrás, entrá con tu cuenta a https://github.com/BabyPop666/Kepler7/invitations y tocá *Accept invitation*. Sin esto tu cuenta no puede pushear.
+Te llega un mail de GitHub. Si no lo encontrás, entrá con tu cuenta a https://github.com/ivan-leonel-reser/Kepler7/invitations y tocá *Accept invitation*. Sin esto tu cuenta no puede pushear.
 
 ## 4. Autorizá tu cuenta en la PC del grupo
 
@@ -59,5 +59,5 @@ gh auth status
 ```
 
 ```bash
-gh auth switch --user BabyPop666
+gh auth switch
 ```
