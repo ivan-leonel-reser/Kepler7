@@ -31,3 +31,15 @@ Diagrama: [`docs/uml/facade.puml`](../uml/facade.puml)
 **Pruebas.** `CommandTests` verifica que cada comando se deshaga bien (incluso revivir a un enemigo que había caído) y el orden de las pilas; `OleadaTests` y `PartidaOleadasTests` prueban el turno completo y la insignia.
 
 Diagrama: [`docs/uml/command.puml`](../uml/command.puml)
+
+### Strategy - IA de los enemigos
+
+**Problema.** Los enemigos del Enjambre no tenían que jugar todos igual, y además queríamos que el jugador pudiera cambiarles la forma de pensar en medio de la oleada. Con un `switch` dentro de la oleada, cada IA nueva obligaba a tocar el motor de combate, y cambiar la de un enemigo ya en juego era manejar banderas a mano.
+
+**Solución.** Cada forma de decidir es una clase que implementa `IEstrategiaIA.DecidirAccion(Enemigo, Contexto)` y devuelve una `DecisionIA` (qué hace, a quién y por qué). `IAAgresiva` va al frente y le pega al que más daño hace; `IADefensiva` se repliega cuando le queda menos de la mitad de la vida; `IAAleatoria` sortea entre todo lo que puede hacer usando el `IAleatorio` del contexto; `IACalculadora` remata al que cae de un golpe y, si no, va por el que cae antes. `Enemigo` guarda su estrategia y solo delega en ella. La estrategia no toca el campo: `Oleada` valida la decisión contra las reglas y la ejecuta, así una IA no puede hacer trampa. Cada tipo de enemigo llega con su IA (Zángano agresiva, Escupidor aleatoria, Coloso defensiva, Reina calculadora).
+
+**Dónde se ve.** En la pantalla de la oleada hay un panel "IA del Enjambre" que muestra, después de cada turno enemigo, qué decidió cada uno y el motivo. Al lado está el hackeo: se elige una IA, se toca "Hackear IA" y después al enemigo. Se puede hackear dos veces por oleada y no se deshace. El enemigo hackeado muestra su IA nueva en la tarjeta y desde el turno siguiente juega distinto (por ejemplo, un Zángano herido con IA defensiva se va atrás en vez de atacar). La IA de un enemigo no se ve hasta que se la revela. El primer hackeo da la insignia "Hacker del Enjambre".
+
+**Pruebas.** `StrategyTests` prueba cada IA por separado sobre el mismo campo y que la misma situación se resuelva distinto según la estrategia; `OleadaTests` verifica que hackear cambia lo que hace el enemigo, el límite de hackeos y que una decisión inválida no se ejecuta.
+
+Diagrama: [`docs/uml/strategy.puml`](../uml/strategy.puml)
