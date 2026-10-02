@@ -1,4 +1,5 @@
 using Kepler7.Core.Combate;
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Tests.Dobles;
 
 namespace Kepler7.Tests.Combate;
@@ -107,6 +108,38 @@ public class OleadaTests
     }
 
     [TestMethod]
+    public void CadaEnemigoJuegaLoQueDecideSuIA()
+    {
+        var agresivo = new Enemigo("Zangano", 30, 5, estrategia: new IAAgresiva());
+        var herido = new Enemigo("Coloso", 30, 5, estrategia: new IADefensiva());
+        var oleada = CrearOleada(agresivo, herido);
+        herido.PerderVida(20);
+
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.AreEqual(_soldado.VidaMaxima - 5, _soldado.Vida);
+        Assert.AreEqual(Fila.Retaguardia, herido.Fila);
+        Assert.HasCount(2, oleada.UltimasJugadas);
+        Assert.AreEqual("Agresiva", oleada.UltimasJugadas[0].IA);
+        Assert.AreEqual(AccionIA.Retroceder, oleada.UltimasJugadas[1].Decision.Accion);
+    }
+
+    [TestMethod]
+    public void SiLaIAPideAlgoQueNoSePuedeElEnemigoEspera()
+    {
+        var tramposo = new Enemigo("Zangano", 30, 5, estrategia: new IAQueAtacaAlDeAtras());
+        var oleada = CrearOleada(tramposo);
+
+        oleada.TerminarTurno();
+        var jugada = oleada.JugarSiguienteEnemigo();
+
+        Assert.IsNotNull(jugada);
+        Assert.AreEqual(AccionIA.Esperar, jugada.Decision.Accion);
+        Assert.AreEqual(_francotirador.VidaMaxima, _francotirador.Vida);
+    }
+
+    [TestMethod]
     public void LoConfirmadoEnUnTurnoYaNoSeDeshace()
     {
         var zangano = new Enemigo("Zangano", 30, 1);
@@ -131,5 +164,15 @@ public class OleadaTests
 
         Assert.AreEqual(EstadoOleada.Derrota, oleada.Estado);
         Assert.IsTrue(oleada.Terminada);
+    }
+
+    // Quiere pegarle a alguien de la retaguardia aunque adelante todavía haya unidades.
+    private class IAQueAtacaAlDeAtras : IEstrategiaIA
+    {
+        public string Nombre => "Tramposa";
+        public string Descripcion => "";
+
+        public DecisionIA DecidirAccion(Enemigo enemigo, Contexto contexto) =>
+            DecisionIA.Atacar(contexto.Campo.EnFila(Bando.Escuadron, Fila.Retaguardia).First(), "");
     }
 }

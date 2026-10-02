@@ -1,5 +1,6 @@
 using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Comportamiento.Command;
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 
 namespace Kepler7.Core.Combate;
 
@@ -16,6 +17,7 @@ public class Oleada
 
     private readonly HashSet<Unidad> _yaActuaron = [];
     private readonly Queue<Enemigo> _enemigosPorJugar = new();
+    private readonly List<JugadaEnemiga> _ultimasJugadas = [];
 
     public Oleada(int numero, IEnumerable<UnidadEscuadron> escuadron, IEnumerable<Enemigo> enemigos, IAleatorio aleatorio)
     {
@@ -36,6 +38,9 @@ public class Oleada
     public IAleatorio Aleatorio { get; }
 
     public bool Terminada => Estado is EstadoOleada.Victoria or EstadoOleada.Derrota;
+
+    /// <summary>Qué decidió cada enemigo en el último turno del Enjambre, y por qué.</summary>
+    public IReadOnlyList<JugadaEnemiga> UltimasJugadas => _ultimasJugadas;
 
     public IEnumerable<UnidadEscuadron> Escuadron =>
         Campo.UnidadesVivasDe(Bando.Escuadron).OfType<UnidadEscuadron>();
@@ -115,6 +120,7 @@ public class Oleada
 
         Comandos.ConfirmarTurno();
         _yaActuaron.Clear();
+        _ultimasJugadas.Clear();
         foreach (var enemigo in Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().OrderBy(e => e.Fila))
             _enemigosPorJugar.Enqueue(enemigo);
 
@@ -150,24 +156,52 @@ public class Oleada
         }
     }
 
-    // Hasta que esté el patrón Strategy todos los enemigos piensan igual: avanzan y le pegan al más débil.
+    // Qué hacer lo decide la IA que el enemigo tenga en ese momento (Strategy). Acá solo se ejecuta.
     private JugadaEnemiga JugarEnemigo(Enemigo enemigo)
     {
-        if (!enemigo.PuedeAtacar && Campo.HayLugar(Bando.Enjambre, Fila.Vanguardia))
+        var ia = enemigo.Estrategia.Nombre;
+        var decision = Validar(enemigo, enemigo.DecidirAccion(new Contexto(Campo, Turno, Aleatorio)));
+        var objetivo = decision.Accion == AccionIA.Atacar ? decision.Objetivo : null;
+
+        var jugada = new JugadaEnemiga(enemigo, objetivo, Aplicar(enemigo, decision), ia, decision);
+        _ultimasJugadas.Add(jugada);
+        return jugada;
+    }
+
+    // Las reglas del combate las pone la oleada: si la IA pide algo que no se puede, el enemigo espera.
+    private DecisionIA Validar(Enemigo enemigo, DecisionIA decision)
+    {
+        var sePuede = decision.Accion switch
         {
-            Campo.Mover(enemigo, Fila.Vanguardia);
-            return new JugadaEnemiga(enemigo, null, Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} avanza"));
+            AccionIA.Atacar => enemigo.PuedeAtacar && decision.Objetivo is { } objetivo && Campo.Atacables(Bando.Enjambre).Contains(objetivo),
+            AccionIA.Avanzar => enemigo.Fila != Fila.Vanguardia && Campo.HayLugar(Bando.Enjambre, Fila.Vanguardia),
+            AccionIA.Retroceder => enemigo.Fila != Fila.Retaguardia && Campo.HayLugar(Bando.Enjambre, Fila.Retaguardia),
+            _ => true,
+        };
+        return sePuede ? decision : DecisionIA.Esperar("no pudo hacer lo que quería");
+    }
+
+    private EntradaBitacora Aplicar(Enemigo enemigo, DecisionIA decision)
+    {
+        switch (decision.Accion)
+        {
+            case AccionIA.Atacar when decision.Objetivo is { } objetivo:
+            {
+                var vidaQuitada = objetivo.RecibirGolpe(new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo));
+                var texto = objetivo.EstaViva
+                    ? $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})"
+                    : $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})";
+                return Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
+            }
+            case AccionIA.Avanzar:
+                Campo.Mover(enemigo, Fila.Vanguardia);
+                return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} avanza");
+            case AccionIA.Retroceder:
+                Campo.Mover(enemigo, Fila.Retaguardia);
+                return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} se repliega");
+            default:
+                return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} espera");
         }
-
-        var objetivo = new Contexto(Campo, Turno, Aleatorio).AtacableMasDebil(enemigo);
-        if (objetivo is null || !enemigo.PuedeAtacar)
-            return new JugadaEnemiga(enemigo, null, Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} espera"));
-
-        var vidaQuitada = objetivo.RecibirGolpe(new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo));
-        var texto = objetivo.EstaViva
-            ? $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})"
-            : $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})";
-        return new JugadaEnemiga(enemigo, objetivo, Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro));
     }
 
     private void Ejecutar(IComando comando)
