@@ -4,6 +4,20 @@ Cada integrante escribe acá el apartado de sus patrones. Este archivo después 
 
 Formato de cada apartado: qué problema del juego resuelve, cómo está aplicado y dónde se ve durante la partida. Diagrama en `docs/uml/`.
 
+## Patrones creacionales
+
+### Builder - Naves del Hangar
+
+**Problema.** Una nave de apoyo se arma con muchos componentes y varios son opcionales (escudo, armas, radar, IA de a bordo, tanques, bodega). Con un constructor que reciba todo, cada tipo de nave obligaba a pasar una lista larga de parámetros, la mitad vacíos, y el orden de armado quedaba repartido por cualquier lado.
+
+**Solución.** `INaveBuilder` define los pasos (`ConstruirCasco()`, `InstalarMotor()`, `InstalarEscudo()`, `InstalarArmas()`, `InstalarRadar()`, `InstalarIA()`, `CargarTanques()`, `MontarBodega()`) y `ObtenerNave()`. Cada receta es un builder concreto que decide qué pieza pone en cada paso: `RecetaExploradora` lleva radar y va desarmada, `RecetaCombate` lleva cañones y blindaje, `RecetaCarga` lleva bodega y no tiene ni armas ni IA. Si un componente no va, ese paso no hace nada. `IngenieroJefe` es el director: llama siempre los mismos pasos en el mismo orden y no sabe qué piezas elige cada receta. El producto es `Nave`, que guarda sus componentes y la lista de piezas en el orden en que se montaron.
+
+**Dónde se ve.** En el módulo Hangar el jugador elige una receta, ve aparecer las piezas una por una y después la ficha de la nave. La nave queda lista para la próxima oleada y su apoyo sale de lo que lleva montado: con radar revela la IA de cada enemigo, con armas abre la oleada con un disparo sobre la vanguardia enemiga y con bodega se gana 50% más de créditos. En el hangar entra una sola nave y se usa en una oleada. Armar las tres recetas da la insignia "Ingeniero de hangar".
+
+**Pruebas.** `BuilderTests` verifica qué lleva cada receta, que el ingeniero llame los pasos siempre en el mismo orden y que la misma receta arme una nave nueva cada vez; `PartidaOleadasTests` prueba el apoyo de cada nave en la oleada y la insignia.
+
+Diagrama: [`docs/uml/builder.puml`](../uml/builder.puml)
+
 ## Patrones estructurales
 
 ### Facade - Control Central

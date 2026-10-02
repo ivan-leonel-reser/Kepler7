@@ -16,7 +16,7 @@ internal static class ModulosEstacion
 {
     public static IReadOnlyList<ModuloEstacion> Todos { get; } =
     [
-        new("Hangar", Patron.Builder, "Armá la nave de apoyo para la próxima oleada.", null),
+        new("Hangar", Patron.Builder, "Armá la nave de apoyo para la próxima oleada.", p => new PantallaHangar(p)),
         new("Censo", Patron.Flyweight, "Reclutá tripulantes entre los 10.000 de la estación.", null),
         new("Laboratorio", Patron.Prototype, "Cloná a un soldado para sumarlo al escuadrón.", null),
         new("Comunicaciones", Patron.Bridge, "Pedí refuerzos a la Tierra con el cifrado que elijas.", null),
