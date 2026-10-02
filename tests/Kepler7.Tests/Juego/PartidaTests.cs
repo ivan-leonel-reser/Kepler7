@@ -43,4 +43,21 @@ public class PartidaTests
         Assert.AreEqual(Partida.CreditosPorInsignia, partida.Progreso.Creditos);
         Assert.AreEqual(guardadosAntes + 1, repositorio.VecesGuardado);
     }
+
+    [TestMethod]
+    public void RevisarLogros_DaLaInsigniaDeFacadeRecienConLasTresOperaciones()
+    {
+        var partida = Partida.Nueva(new RepositorioProgresoFalso(), new AleatorioFijo());
+
+        partida.ControlCentral.IniciarTurno();
+        partida.ControlCentral.EntrarEnEmergencia();
+        Assert.IsEmpty(partida.RevisarLogros());
+
+        partida.ControlCentral.ApagarEstacion();
+        var nuevas = partida.RevisarLogros();
+
+        Assert.HasCount(1, nuevas);
+        Assert.AreEqual(Patron.Facade, nuevas[0].Patron);
+        Assert.IsEmpty(partida.RevisarLogros());
+    }
 }

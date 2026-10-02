@@ -1,4 +1,5 @@
 using Kepler7.Core.Juego;
+using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Progreso;
 using Kepler7.Game.Controles;
 
@@ -93,8 +94,16 @@ internal class PantallaEstacion : Pantalla
             Padding = new Padding(0, 20, 0, 0),
             BackColor = Color.Transparent,
         };
+        var (modo, colorModo) = partida.ControlCentral.Modo switch
+        {
+            ModoEstacion.Operativa => ("OPERATIVA", Tema.Exito),
+            ModoEstacion.Emergencia => ("EMERGENCIA", Tema.Peligro),
+            _ => ("APAGADA", Tema.TextoTenue),
+        };
+
         datos.Controls.AddRange(
         [
+            CrearDato("ESTACIÓN", modo, colorModo),
             CrearDato("CRÉDITOS", progreso.Creditos.ToString()),
             CrearDato("OLEADAS", $"{progreso.OleadasSuperadas}/{ProgresoJugador.OleadasTotales}"),
             CrearDato("INSIGNIAS", $"{progreso.Insignias.Count}/{CatalogoInsignias.Todas.Count}"),
@@ -104,7 +113,7 @@ internal class PantallaEstacion : Pantalla
         return encabezado;
     }
 
-    private static Control CrearDato(string nombre, string valor)
+    private static Control CrearDato(string nombre, string valor, Color? color = null)
     {
         var panel = new FlowLayoutPanel
         {
@@ -115,7 +124,7 @@ internal class PantallaEstacion : Pantalla
             BackColor = Color.Transparent,
         };
         panel.Controls.Add(Tema.CrearEtiqueta(nombre, Tema.Chica, Tema.TextoTenue));
-        panel.Controls.Add(Tema.CrearEtiqueta(valor, Tema.Encabezado, Tema.Texto));
+        panel.Controls.Add(Tema.CrearEtiqueta(valor, Tema.Encabezado, color ?? Tema.Texto));
         return panel;
     }
 

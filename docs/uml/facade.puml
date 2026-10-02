@@ -1,0 +1,89 @@
+@startuml facade
+title Facade - Control Central
+skinparam classAttributeIconSize 0
+hide empty members
+
+package "Kepler7.Game" {
+  class PantallaControlCentral
+}
+
+package "Kepler7.Core" {
+  class ControlCentral <<fachada>> {
+    +Modo : ModoEstacion
+    +TurnosIniciados : int
+    +EmergenciasDeclaradas : int
+    +VecesApagada : int
+    +Subsistemas : IReadOnlyList<EstadoSubsistema>
+    +IniciarTurno() : IReadOnlyList<EntradaBitacora>
+    +EntrarEnEmergencia() : IReadOnlyList<EntradaBitacora>
+    +ApagarEstacion() : IReadOnlyList<EntradaBitacora>
+  }
+
+  interface ISubsistema <<internal>> {
+    Nombre : string
+    Estado : EstadoOperativo
+    Detalle : string
+  }
+
+  class SistemaEnergia <<internal>> {
+    +EncenderReactor()
+    +DesviarAReserva()
+    +Apagar()
+  }
+  class SistemaSoporteVital <<internal>> {
+    +Activar()
+    +SellarSectores()
+    +ModoMinimo()
+  }
+  class SistemaNavegacion <<internal>> {
+    +EstabilizarOrbita()
+    +ManiobraEvasiva()
+    +ApagarPropulsores()
+  }
+  class SistemaComunicaciones <<internal>> {
+    +AbrirEnlace()
+    +DifundirAlerta()
+    +CerrarEnlace()
+  }
+  class SistemaSeguridad <<internal>> {
+    +HabilitarAccesos()
+    +BloqueoTotal()
+    +SellarEstacion()
+  }
+  class SistemaDefensa <<internal>> {
+    +ModoVigilancia()
+    +CombateTotal()
+    +Desarmar()
+  }
+
+  class EstadoSubsistema <<record>>
+  enum ModoEstacion {
+    Apagada
+    Operativa
+    Emergencia
+  }
+}
+
+PantallaControlCentral --> ControlCentral : usa solo la fachada
+ControlCentral *-- SistemaEnergia
+ControlCentral *-- SistemaSoporteVital
+ControlCentral *-- SistemaNavegacion
+ControlCentral *-- SistemaComunicaciones
+ControlCentral *-- SistemaSeguridad
+ControlCentral *-- SistemaDefensa
+ControlCentral ..> EstadoSubsistema : crea
+ControlCentral --> ModoEstacion
+
+SistemaEnergia ..|> ISubsistema
+SistemaSoporteVital ..|> ISubsistema
+SistemaNavegacion ..|> ISubsistema
+SistemaComunicaciones ..|> ISubsistema
+SistemaSeguridad ..|> ISubsistema
+SistemaDefensa ..|> ISubsistema
+
+note bottom of ControlCentral
+  Los subsistemas son internal:
+  el formulario no los puede llamar,
+  solo pasa por la fachada.
+end note
+@enduml

@@ -19,6 +19,7 @@ internal static class Tema
     public static readonly Font Titulo = new("Segoe UI", 30, FontStyle.Bold);
     public static readonly Font Subtitulo = new("Segoe UI", 13);
     public static readonly Font Encabezado = new("Segoe UI", 18, FontStyle.Bold);
+    public static readonly Font Destacado = new("Segoe UI", 13, FontStyle.Bold);
     public static readonly Font Normal = new("Segoe UI", 10);
     public static readonly Font Negrita = new("Segoe UI", 10, FontStyle.Bold);
     public static readonly Font Chica = new("Segoe UI", 9);

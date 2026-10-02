@@ -23,7 +23,7 @@ internal static class ModulosEstacion
         new("Bóveda", Patron.Proxy, "Leé el informe secreto sobre la próxima oleada.", null),
         new("Almacén", Patron.Visitor, "Revisá y vendé el botín de las oleadas.", null),
         new("Armería", Patron.ChainOfResponsibility, "Ordená las capas de defensa del escuadrón.", null),
-        new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", null),
+        new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", p => new PantallaControlCentral(p)),
     ];
 
     public static string NombrePatron(Patron patron) => patron switch
