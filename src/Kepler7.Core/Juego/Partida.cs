@@ -1,5 +1,6 @@
 using Kepler7.Core.Combate;
 using Kepler7.Core.Comun;
+using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Persistencia;
 using Kepler7.Core.Progreso;
@@ -13,6 +14,8 @@ public class Partida
     public const int CreditosPorInsignia = 100;
 
     private readonly IRepositorioProgreso _repositorio;
+    private readonly IngenieroJefe _ingeniero = new();
+    private readonly HashSet<string> _recetasUsadas = [];
 
     public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio)
     {
@@ -28,6 +31,9 @@ public class Partida
     public ControlCentral ControlCentral { get; }
     public List<UnidadEscuadron> Escuadron { get; } = EscuadronInicial();
     public Oleada? OleadaActual { get; private set; }
+
+    /// <summary>La nave que espera en el Hangar para la próxima oleada. Hay lugar para una sola.</summary>
+    public Nave? NaveDeApoyo { get; private set; }
 
     /// <summary>La partida se perdió: ya no se guarda más.</summary>
     public bool Terminada { get; private set; }
@@ -64,6 +70,16 @@ public class Partida
             _repositorio.Guardar(Progreso);
     }
 
+    /// <summary>El ingeniero jefe arma la nave con la receta elegida y la deja lista para la próxima oleada.</summary>
+    public Nave EnsamblarNave(INaveBuilder receta)
+    {
+        var nave = _ingeniero.Ensamblar(receta);
+        NaveDeApoyo = nave;
+        _recetasUsadas.Add(receta.Nombre);
+        Bitacora.Registrar("Hangar", $"Nave {nave.Modelo} lista para la próxima oleada: {nave.Apoyo}.", TipoEntrada.Exito);
+        return nave;
+    }
+
     public Oleada EmpezarOleada()
     {
         if (!PuedeDefender)
@@ -78,6 +94,12 @@ public class Partida
         // La alarma la da el Control Central: una sola orden pone toda la estación en emergencia.
         foreach (var paso in ControlCentral.EntrarEnEmergencia())
             oleada.Bitacora.Registrar(paso);
+        if (NaveDeApoyo is { } nave)
+        {
+            oleada.RecibirApoyo(nave);
+            // La nave sale con esta oleada: para la siguiente hay que armar otra.
+            NaveDeApoyo = null;
+        }
         var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).Count();
         oleada.Bitacora.Registrar("Oleada", $"Oleada {numero} de {ProgresoJugador.OleadasTotales}: {enemigos} enemigos. Le toca al escuadrón.", TipoEntrada.Peligro);
 
@@ -102,6 +124,7 @@ public class Partida
 
         var xp = 40 + 10 * oleada.Numero;
         var creditos = 50 + 25 * oleada.Numero;
+        creditos += creditos * (oleada.NaveDeApoyo?.BonusCreditos ?? 0) / 100;
         Progreso.SuperarOleada();
         Progreso.GanarCreditos(creditos);
         var subioNivel = Progreso.GanarXp(xp);
@@ -123,6 +146,9 @@ public class Partida
 
         if (ControlCentral.TurnosIniciados > 0 && ControlCentral.EmergenciasDeclaradas > 0 && ControlCentral.VecesApagada > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Facade));
+
+        if (_recetasUsadas.Count == CatalogoRecetas.Crear().Count)
+            Sumar(nuevas, OtorgarInsignia(Patron.Builder));
 
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));

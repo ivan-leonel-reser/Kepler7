@@ -1,6 +1,7 @@
 using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
+using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Progreso;
 using Kepler7.Tests.Dobles;
@@ -112,6 +113,71 @@ public class PartidaOleadasTests
         oleada.Rehacer();
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Command));
+    }
+
+    [TestMethod]
+    public void LaNaveExploradoraRevelaLaIAYSeUsaEnUnaSolaOleada()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        _partida.EnsamblarNave(new RecetaExploradora());
+
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.IsTrue(oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().All(e => e.IARevelada));
+        Assert.AreEqual("Exploradora", oleada.NaveDeApoyo?.Modelo);
+        Assert.IsNull(_partida.NaveDeApoyo);
+    }
+
+    [TestMethod]
+    public void LaNaveDeCombateGolpeaALaVanguardiaSinRematar()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var nave = _partida.EnsamblarNave(new RecetaCombate());
+
+        var oleada = _partida.EmpezarOleada();
+
+        var adelante = oleada.Campo.EnFila(Bando.Enjambre, Fila.Vanguardia).ToList();
+        Assert.IsTrue(adelante.All(e => e.Vida == e.VidaMaxima - nave.DanioDeApoyo));
+        Assert.IsFalse(oleada.Terminada);
+    }
+
+    [TestMethod]
+    public void LaNaveDeCargaTraeMasCreditos()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        _partida.EnsamblarNave(new RecetaCarga());
+        var oleada = _partida.EmpezarOleada();
+        GanarRapido(oleada);
+
+        var resultado = _partida.CerrarOleada();
+
+        // La oleada 1 da 75 créditos; con la bodega, la mitad más.
+        Assert.AreEqual(112, resultado.Creditos);
+    }
+
+    [TestMethod]
+    public void SinNaveLaOleadaEmpiezaComoSiempre()
+    {
+        _partida.ControlCentral.IniciarTurno();
+
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.IsNull(oleada.NaveDeApoyo);
+        Assert.IsFalse(oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().Any(e => e.IARevelada));
+    }
+
+    [TestMethod]
+    public void ArmarLasTresRecetasDaLaInsigniaDeBuilder()
+    {
+        _partida.EnsamblarNave(new RecetaExploradora());
+        _partida.EnsamblarNave(new RecetaCombate());
+        _partida.EnsamblarNave(new RecetaCombate());
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Builder));
+
+        _partida.EnsamblarNave(new RecetaCarga());
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Builder));
+        Assert.AreEqual("Carga", _partida.NaveDeApoyo?.Modelo);
     }
 
     [TestMethod]

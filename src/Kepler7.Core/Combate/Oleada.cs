@@ -2,6 +2,7 @@ using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Comportamiento.Command;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
+using Kepler7.Core.Patrones.Creacionales.Builder;
 
 namespace Kepler7.Core.Combate;
 
@@ -53,6 +54,9 @@ public class Oleada
     /// <summary>Las clases del escuadrón que ya jugaron algún turno en esta oleada.</summary>
     public IReadOnlyCollection<ClaseUnidad> ClasesQueJugaron => _clasesQueJugaron;
 
+    /// <summary>La nave del Hangar que acompaña esta oleada, si se armó una.</summary>
+    public Nave? NaveDeApoyo { get; private set; }
+
     public int HackeosRealizados { get; private set; }
 
     public int HackeosDisponibles => HackeosPorOleada - HackeosRealizados;
@@ -75,6 +79,33 @@ public class Oleada
 
     public bool PuedeConstruir(UnidadEscuadron unidad) =>
         PuedeActuar(unidad) && BarricadasDisponibles > 0 && Campo.HayLugar(Bando.Escuadron, Fila.Vanguardia);
+
+    /// <summary>Suma la nave de apoyo a la oleada. Se llama antes de que el escuadrón haga su primera jugada.</summary>
+    public void RecibirApoyo(Nave nave)
+    {
+        Exigir(NaveDeApoyo is null && Turno == 1 && _yaActuaron.Count == 0, "La nave de apoyo llega antes de empezar la oleada.");
+
+        NaveDeApoyo = nave;
+        Bitacora.Registrar("Hangar", $"La nave {nave.Modelo} acompaña al escuadrón.", TipoEntrada.Exito);
+
+        if (nave.RevelaIA)
+        {
+            foreach (var enemigo in Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>())
+                enemigo.IARevelada = true;
+            Bitacora.Registrar("Hangar", "El radar identifica la IA de cada enemigo.", TipoEntrada.Exito);
+        }
+
+        if (nave.DanioDeApoyo > 0)
+        {
+            // El disparo ablanda a la vanguardia pero no remata: la oleada se gana peleando.
+            foreach (var enemigo in Campo.EnFila(Bando.Enjambre, Fila.Vanguardia).ToList())
+                enemigo.PerderVida(Math.Min(nave.DanioDeApoyo, enemigo.Vida - 1));
+            Bitacora.Registrar("Hangar", $"Disparo de apoyo: {nave.DanioDeApoyo} de daño a la vanguardia enemiga.", TipoEntrada.Exito);
+        }
+
+        if (nave.BonusCreditos > 0)
+            Bitacora.Registrar("Hangar", $"Con la bodega, ganar la oleada da {nave.BonusCreditos}% más de créditos.", TipoEntrada.Exito);
+    }
 
     public bool PuedeHackear(Enemigo enemigo) =>
         Estado == EstadoOleada.TurnoJugador && HackeosDisponibles > 0 && enemigo.EstaViva && Campo.Unidades.Contains(enemigo);
