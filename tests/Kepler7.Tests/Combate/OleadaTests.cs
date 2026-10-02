@@ -140,6 +140,42 @@ public class OleadaTests
     }
 
     [TestMethod]
+    public void HackearCambiaLoQueHaceElEnemigo()
+    {
+        var zangano = new Enemigo("Zangano", 30, 5, estrategia: new IAAgresiva());
+        var oleada = CrearOleada(zangano);
+        zangano.PerderVida(20);
+
+        oleada.Hackear(zangano, new IADefensiva());
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        // Con la IA agresiva le pegaba al soldado; con la defensiva, herido, se repliega.
+        Assert.AreEqual(_soldado.VidaMaxima, _soldado.Vida);
+        Assert.AreEqual(Fila.Retaguardia, zangano.Fila);
+        Assert.IsTrue(zangano.IARevelada);
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Hackeo"));
+    }
+
+    [TestMethod]
+    public void SeHackeaDosVecesPorOleadaYSoloEnElTurnoPropio()
+    {
+        var zangano = new Enemigo("Zangano", 30, 1);
+        var oleada = CrearOleada(zangano);
+
+        oleada.Hackear(zangano, new IAAleatoria());
+        oleada.TerminarTurno();
+        Assert.IsFalse(oleada.PuedeHackear(zangano));
+
+        oleada.JugarTurnoEnjambre();
+        oleada.Hackear(zangano, new IACalculadora());
+
+        Assert.AreEqual(0, oleada.HackeosDisponibles);
+        Assert.ThrowsExactly<InvalidOperationException>(() => oleada.Hackear(zangano, new IAAgresiva()));
+        Assert.IsInstanceOfType<IACalculadora>(zangano.Estrategia);
+    }
+
+    [TestMethod]
     public void LoConfirmadoEnUnTurnoYaNoSeDeshace()
     {
         var zangano = new Enemigo("Zangano", 30, 1);

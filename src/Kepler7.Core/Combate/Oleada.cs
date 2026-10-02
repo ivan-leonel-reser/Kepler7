@@ -13,6 +13,7 @@ public class Oleada
 {
     public const int BarricadasPorOleada = 2;
     public const int Curacion = 10;
+    public const int HackeosPorOleada = 2;
     private const string Origen = "Oleada";
 
     private readonly HashSet<Unidad> _yaActuaron = [];
@@ -47,6 +48,10 @@ public class Oleada
 
     public int BarricadasDisponibles => BarricadasPorOleada - Campo.Unidades.OfType<Barricada>().Count();
 
+    public int HackeosRealizados { get; private set; }
+
+    public int HackeosDisponibles => HackeosPorOleada - HackeosRealizados;
+
     public bool YaActuo(Unidad unidad) => _yaActuaron.Contains(unidad);
 
     public bool PuedeActuar(UnidadEscuadron unidad) =>
@@ -65,6 +70,28 @@ public class Oleada
 
     public bool PuedeConstruir(UnidadEscuadron unidad) =>
         PuedeActuar(unidad) && BarricadasDisponibles > 0 && Campo.HayLugar(Bando.Escuadron, Fila.Vanguardia);
+
+    public bool PuedeHackear(Enemigo enemigo) =>
+        Estado == EstadoOleada.TurnoJugador && HackeosDisponibles > 0 && enemigo.EstaViva && Campo.Unidades.Contains(enemigo);
+
+    /// <summary>
+    /// Le cambia la IA a un enemigo en plena oleada. No gasta la acción de ninguna unidad
+    /// y no es un comando: no se puede deshacer.
+    /// </summary>
+    public void Hackear(Enemigo enemigo, IEstrategiaIA nueva)
+    {
+        Exigir(PuedeHackear(enemigo), $"No se puede hackear a {enemigo.Nombre}.");
+
+        var anterior = enemigo.Estrategia.Nombre;
+        enemigo.Estrategia = nueva;
+        enemigo.IARevelada = true;
+        HackeosRealizados++;
+
+        var texto = anterior == nueva.Nombre
+            ? $"{enemigo.Nombre} ya usaba la IA {anterior}. Queda al descubierto."
+            : $"{enemigo.Nombre} pasa de IA {anterior} a IA {nueva.Nombre}.";
+        Bitacora.Registrar("Hackeo", texto, TipoEntrada.Advertencia);
+    }
 
     public void Mover(UnidadEscuadron unidad)
     {

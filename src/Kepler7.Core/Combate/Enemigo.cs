@@ -14,5 +14,8 @@ public class Enemigo : Unidad
     /// <summary>La IA que decide su turno. Se puede cambiar durante la oleada.</summary>
     public IEstrategiaIA Estrategia { get; set; }
 
+    /// <summary>El jugador recién ve qué IA usa cuando lo hackea o consigue un informe.</summary>
+    public bool IARevelada { get; set; }
+
     public DecisionIA DecidirAccion(Contexto contexto) => Estrategia.DecidirAccion(this, contexto);
 }

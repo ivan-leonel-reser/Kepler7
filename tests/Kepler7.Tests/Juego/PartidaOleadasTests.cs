@@ -1,5 +1,6 @@
 using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
+using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Progreso;
 using Kepler7.Tests.Dobles;
@@ -111,5 +112,19 @@ public class PartidaOleadasTests
         oleada.Rehacer();
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Command));
+    }
+
+    [TestMethod]
+    public void HackearUnEnemigoDaLaInsigniaDeStrategy()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Strategy));
+
+        var enemigo = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().First();
+        oleada.Hackear(enemigo, new IADefensiva());
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Strategy));
+        Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.Strategy));
     }
 }
