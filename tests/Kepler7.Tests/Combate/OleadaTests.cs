@@ -48,6 +48,23 @@ public class OleadaTests
     }
 
     [TestMethod]
+    public void CadaAccionDejaLasCuatroEtapasEnLaBitacora()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+
+        oleada.Atacar(_francotirador, zangano);
+
+        var etapas = oleada.Bitacora.Entradas.Where(e => e.Origen.StartsWith("Luna")).Select(e => e.Origen).ToList();
+        CollectionAssert.AreEqual(new[] { "Luna · inicio", "Luna · decisión", "Luna · acción", "Luna · fin" }, etapas);
+        Assert.Contains(ClaseUnidad.Francotirador, oleada.ClasesQueJugaron);
+
+        // El tiro apuntado va adentro del comando, así que deshacer devuelve toda la vida.
+        oleada.Deshacer();
+        Assert.AreEqual(30, zangano.Vida);
+    }
+
+    [TestMethod]
     public void SoloElMedicoCura()
     {
         var oleada = CrearOleada(new Enemigo("Zangano", 30, 3));

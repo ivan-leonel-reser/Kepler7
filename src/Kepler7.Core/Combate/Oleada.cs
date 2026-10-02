@@ -1,12 +1,13 @@
 using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Comportamiento.Command;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
+using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
 
 namespace Kepler7.Core.Combate;
 
 /// <summary>
 /// El combate de una oleada. En el turno del escuadrón cada unidad hace una acción,
-/// que se guarda como comando y se puede deshacer hasta terminar el turno.
+/// que pasa por las etapas de su turno, se guarda como comando y se puede deshacer hasta terminar el turno.
 /// Después juega el Enjambre, de a un enemigo.
 /// </summary>
 public class Oleada
@@ -17,6 +18,7 @@ public class Oleada
     private const string Origen = "Oleada";
 
     private readonly HashSet<Unidad> _yaActuaron = [];
+    private readonly HashSet<ClaseUnidad> _clasesQueJugaron = [];
     private readonly Queue<Enemigo> _enemigosPorJugar = new();
     private readonly List<JugadaEnemiga> _ultimasJugadas = [];
 
@@ -47,6 +49,9 @@ public class Oleada
         Campo.UnidadesVivasDe(Bando.Escuadron).OfType<UnidadEscuadron>();
 
     public int BarricadasDisponibles => BarricadasPorOleada - Campo.Unidades.OfType<Barricada>().Count();
+
+    /// <summary>Las clases del escuadrón que ya jugaron algún turno en esta oleada.</summary>
+    public IReadOnlyCollection<ClaseUnidad> ClasesQueJugaron => _clasesQueJugaron;
 
     public int HackeosRealizados { get; private set; }
 
@@ -96,25 +101,25 @@ public class Oleada
     public void Mover(UnidadEscuadron unidad)
     {
         Exigir(PuedeMover(unidad), $"{unidad.Nombre} no puede cambiar de fila.");
-        Ejecutar(new MoverComando(Campo, unidad, Opuesta(unidad.Fila)));
+        JugarTurno(unidad, new OrdenTurno(TipoOrden.Mover));
     }
 
     public void Atacar(UnidadEscuadron atacante, Unidad objetivo)
     {
         Exigir(ObjetivosDeAtaque(atacante).Contains(objetivo), $"{atacante.Nombre} no puede atacar a {objetivo.Nombre}.");
-        Ejecutar(new AtacarComando(atacante, objetivo));
+        JugarTurno(atacante, new OrdenTurno(TipoOrden.Atacar, objetivo));
     }
 
     public void Curar(UnidadEscuadron medico, Unidad objetivo)
     {
         Exigir(ObjetivosDeCuracion(medico).Contains(objetivo), $"{medico.Nombre} no puede curar a {objetivo.Nombre}.");
-        Ejecutar(new CurarComando(medico, objetivo, Curacion));
+        JugarTurno(medico, new OrdenTurno(TipoOrden.Curar, objetivo));
     }
 
     public void Construir(UnidadEscuadron constructor)
     {
         Exigir(PuedeConstruir(constructor), $"{constructor.Nombre} no puede construir una barricada.");
-        Ejecutar(new ConstruirComando(Campo, constructor));
+        JugarTurno(constructor, new OrdenTurno(TipoOrden.Construir));
     }
 
     /// <returns>El comando deshecho, o null si no había nada para deshacer.</returns>
@@ -231,11 +236,13 @@ public class Oleada
         }
     }
 
-    private void Ejecutar(IComando comando)
+    // La orden ya está validada. El turno de la unidad sigue sus etapas (Template Method),
+    // arma el comando y deja cada etapa en la bitácora.
+    private void JugarTurno(UnidadEscuadron unidad, OrdenTurno orden)
     {
-        Comandos.Ejecutar(comando);
-        _yaActuaron.Add(comando.Actor);
-        Bitacora.Registrar("Escuadrón", comando.Descripcion, TipoEntrada.Exito);
+        TurnoUnidad.Para(unidad, Campo).EjecutarTurno(orden, Comandos, Bitacora);
+        _yaActuaron.Add(unidad);
+        _clasesQueJugaron.Add(unidad.Clase);
         ChequearFin();
     }
 
