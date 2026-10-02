@@ -15,6 +15,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kepler7.Core\Kepler7.Core.csproj" />
+    <ProjectReference Include="..\..\src\Kepler7.BE\Kepler7.BE.csproj" />
+    <ProjectReference Include="..\..\src\Kepler7.Services\Kepler7.Services.csproj" />
+    <ProjectReference Include="..\..\src\Kepler7.DAL\Kepler7.DAL.csproj" />
   </ItemGroup>
 
 </Project>

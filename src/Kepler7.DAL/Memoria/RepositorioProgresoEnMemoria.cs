@@ -1,6 +1,6 @@
 using Kepler7.BE;
 
-namespace Kepler7.Data.Memoria;
+namespace Kepler7.DAL.Memoria;
 
 /// <summary>Guarda el progreso solo mientras el juego está abierto. Se reemplaza por la versión con SQL Server.</summary>
 public class RepositorioProgresoEnMemoria : IRepositorioProgreso

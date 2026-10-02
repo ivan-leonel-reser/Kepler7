@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Core no referencia System.Windows.Forms ni System.Drawing (consigna 5.2). No agregar paquetes. -->
+  <!-- Lógica del juego y los 12 patrones (la capa de negocio).
+       Core no referencia System.Windows.Forms ni System.Drawing (consigna 5.2). No agregar paquetes. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -9,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Kepler7.BE\Kepler7.BE.csproj" />
     <ProjectReference Include="..\Kepler7.Services\Kepler7.Services.csproj" />
+    <ProjectReference Include="..\Kepler7.DAL\Kepler7.DAL.csproj" />
   </ItemGroup>
 
 </Project>
