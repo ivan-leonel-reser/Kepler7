@@ -58,6 +58,9 @@ public class Oleada
     /// <summary>La nave del Hangar que acompaña esta oleada, si se armó una.</summary>
     public Nave? NaveDeApoyo { get; private set; }
 
+    /// <summary>Golpes del Enjambre que las defensas del escuadrón frenaron enteros.</summary>
+    public int GolpesAbsorbidos { get; private set; }
+
     public int HackeosRealizados { get; private set; }
 
     public int HackeosDisponibles => HackeosPorOleada - HackeosRealizados;
@@ -251,11 +254,14 @@ public class Oleada
         {
             case AccionIA.Atacar when decision.Objetivo is { } objetivo:
             {
-                var vidaQuitada = objetivo.RecibirGolpe(new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo));
+                var golpe = new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo);
+                var vidaQuitada = objetivo.RecibirGolpe(golpe);
                 var texto = objetivo.EstaViva
                     ? $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})"
                     : $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})";
-                return Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
+                var entrada = Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
+                RegistrarDefensa(objetivo, golpe);
+                return entrada;
             }
             case AccionIA.Avanzar:
                 Campo.Mover(enemigo, Fila.Vanguardia);
@@ -266,6 +272,18 @@ public class Oleada
             default:
                 return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} espera");
         }
+    }
+
+    // Si la unidad lleva capas además de la vida, queda en la bitácora cómo las fue atravesando el golpe.
+    private void RegistrarDefensa(Unidad objetivo, Danio golpe)
+    {
+        if (objetivo.Defensas.Eslabones.Count <= 1)
+            return;
+
+        var frenado = golpe.VidaPerdida == 0;
+        if (frenado)
+            GolpesAbsorbidos++;
+        Bitacora.Registrar($"Defensas · {objetivo.Nombre}", golpe.DescribirRecorrido(), frenado ? TipoEntrada.Exito : TipoEntrada.Info);
     }
 
     // La orden ya está validada. El turno de la unidad sigue sus etapas (Template Method),

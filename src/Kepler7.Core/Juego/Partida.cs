@@ -1,5 +1,6 @@
 using Kepler7.BE;
 using Kepler7.Core.Combate;
+using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Progreso;
@@ -31,6 +32,9 @@ public class Partida
     public ControlCentral ControlCentral { get; }
     public List<UnidadEscuadron> Escuadron { get; } = EscuadronInicial();
     public Oleada? OleadaActual { get; private set; }
+
+    /// <summary>Las capas de defensa que lleva el escuadrón y su orden.</summary>
+    public Armeria Armeria { get; } = new();
 
     /// <summary>La nave que espera en el Hangar para la próxima oleada. Hay lugar para una sola.</summary>
     public Nave? NaveDeApoyo { get; private set; }
@@ -86,7 +90,10 @@ public class Partida
             throw new InvalidOperationException("Para defender una oleada la estación tiene que estar operativa.");
 
         foreach (var unidad in Escuadron)
+        {
             unidad.Curar(unidad.VidaMaxima);
+            Armeria.Equipar(unidad, Aleatorio);
+        }
 
         var numero = NumeroProximaOleada;
         var oleada = new Oleada(numero, Escuadron, GeneradorOleadas.Crear(numero), Aleatorio);
@@ -155,6 +162,9 @@ public class Partida
 
         if (OleadaActual is { } actual && actual.ClasesQueJugaron.Count == Enum.GetValues<ClaseUnidad>().Length)
             Sumar(nuevas, OtorgarInsignia(Patron.TemplateMethod));
+
+        if (OleadaActual is { GolpesAbsorbidos: > 0 })
+            Sumar(nuevas, OtorgarInsignia(Patron.ChainOfResponsibility));
 
         if (OleadaActual is { HackeosRealizados: > 0 })
             Sumar(nuevas, OtorgarInsignia(Patron.Strategy));

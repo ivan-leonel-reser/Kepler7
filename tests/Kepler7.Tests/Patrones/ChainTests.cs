@@ -136,6 +136,52 @@ public class ChainTests
     }
 
     [TestMethod]
+    public void Armeria_ArrancaConElOrdenDeLaConsignaYDejaReordenar()
+    {
+        var armeria = new Armeria();
+        CollectionAssert.AreEqual(
+            new[] { TipoCapa.Esquiva, TipoCapa.Bloqueo, TipoCapa.Armadura, TipoCapa.Escudo },
+            armeria.Capas.ToArray());
+
+        armeria.Quitar(TipoCapa.Bloqueo);
+        armeria.Subir(TipoCapa.Escudo);
+        armeria.Agregar(TipoCapa.Bloqueo);
+
+        CollectionAssert.AreEqual(
+            new[] { TipoCapa.Esquiva, TipoCapa.Escudo, TipoCapa.Armadura, TipoCapa.Bloqueo },
+            armeria.Capas.ToArray());
+        Assert.IsEmpty(armeria.Guardadas);
+        Assert.IsFalse(armeria.PuedeSubir(TipoCapa.Esquiva));
+        Assert.IsFalse(armeria.PuedeBajar(TipoCapa.Bloqueo));
+        Assert.ThrowsExactly<InvalidOperationException>(() => armeria.Agregar(TipoCapa.Escudo));
+    }
+
+    [TestMethod]
+    public void Armeria_ElGolpeDePruebaUsaLaCadenaActualYNoTocaAlEscuadron()
+    {
+        var armeria = new Armeria();
+        armeria.Quitar(TipoCapa.Escudo);
+        armeria.Quitar(TipoCapa.Bloqueo);
+
+        var golpe = armeria.ProbarGolpe(5, _azar);
+
+        CollectionAssert.AreEqual(new[] { "Esquiva", "Armadura", "Vida" }, Capas(golpe));
+        Assert.AreEqual(4, golpe.VidaPerdida);
+        Assert.AreEqual(_soldado.VidaMaxima, _soldado.Vida);
+    }
+
+    [TestMethod]
+    public void SinEquipoLaCadenaDeUnaUnidadEsSoloSuVida()
+    {
+        var zangano = new Enemigo("Zangano", 12, 2);
+
+        var perdida = zangano.RecibirGolpe(new Danio(5));
+
+        Assert.AreEqual(5, perdida);
+        Assert.HasCount(1, zangano.Defensas.Eslabones);
+    }
+
+    [TestMethod]
     public void ElRecorridoDiceCuantoEntraYCuantoSaleDeCadaCapa()
     {
         var danio = Golpear(5);

@@ -1,6 +1,7 @@
 using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
+using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
@@ -72,6 +73,9 @@ public class PartidaOleadasTests
     [TestMethod]
     public void PerderApagaLaEstacionYTerminaLaPartida()
     {
+        // Sin capas de defensa, para que el escuadrón caiga en dos turnos.
+        foreach (var capa in _partida.Armeria.Capas.ToList())
+            _partida.Armeria.Quitar(capa);
         _partida.ControlCentral.IniciarTurno();
         var oleada = _partida.EmpezarOleada();
         foreach (var unidad in _partida.Escuadron)
@@ -178,6 +182,56 @@ public class PartidaOleadasTests
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Builder));
         Assert.AreEqual("Carga", _partida.NaveDeApoyo?.Modelo);
+    }
+
+    [TestMethod]
+    public void CadaOleadaEquipaAlEscuadronConLaCadenaDeLaArmeria()
+    {
+        _partida.Armeria.Quitar(TipoCapa.Esquiva);
+        _partida.Armeria.Subir(TipoCapa.Escudo);
+        _partida.ControlCentral.IniciarTurno();
+
+        _partida.EmpezarOleada();
+
+        foreach (var unidad in _partida.Escuadron)
+            CollectionAssert.AreEqual(
+                new[] { "Bloqueo", "Escudo", "Armadura", "Vida" },
+                unidad.Defensas.Eslabones.Select(e => e.Nombre).ToArray(),
+                unidad.Nombre);
+    }
+
+    [TestMethod]
+    public void ElEscudoYLosBloqueosSeRecarganEnCadaOleada()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var primera = _partida.EmpezarOleada();
+        var vega = _partida.Escuadron[0];
+        vega.RecibirGolpe(new Danio(20));
+        GanarRapido(primera);
+        _partida.CerrarOleada();
+
+        _partida.EmpezarOleada();
+
+        var escudo = vega.Defensas.Eslabones.OfType<Escudo>().Single();
+        Assert.AreEqual(Escudo.PuntosPorOleada, escudo.Puntos);
+        Assert.AreEqual(Bloqueo.UsosPorOleada, vega.Defensas.Eslabones.OfType<Bloqueo>().Single().UsosRestantes);
+    }
+
+    [TestMethod]
+    public void FrenarUnGolpeEnteroDaLaInsigniaDeChain()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.ChainOfResponsibility));
+
+        // Los Zánganos de la oleada 1 pegan de a 2: el bloqueo los para enteros.
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.IsGreaterThan(0, oleada.GolpesAbsorbidos);
+        Assert.IsTrue(_partida.Escuadron.All(u => u.Vida == u.VidaMaxima));
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen.StartsWith("Defensas") && e.Mensaje.Contains("no pierde vida")));
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.ChainOfResponsibility));
     }
 
     [TestMethod]
