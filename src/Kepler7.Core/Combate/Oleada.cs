@@ -256,9 +256,9 @@ public class Oleada
             {
                 var golpe = new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo);
                 var vidaQuitada = objetivo.RecibirGolpe(golpe);
-                var texto = objetivo.EstaViva
-                    ? $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})"
-                    : $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})";
+                var texto = !objetivo.EstaViva ? $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})"
+                    : vidaQuitada == 0 ? $"{enemigo.Nombre} ataca a {objetivo.Nombre}, pero no le saca vida"
+                    : $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})";
                 var entrada = Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
                 RegistrarDefensa(objetivo, golpe);
                 return entrada;

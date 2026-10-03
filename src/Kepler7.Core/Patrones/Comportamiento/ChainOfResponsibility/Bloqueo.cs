@@ -17,7 +17,7 @@ public class Bloqueo : ManejadorDanio
         if (UsosRestantes == 0)
             return "ya no le quedan bloqueos";
         if (danio.Restante > GolpeMaximo)
-            return $"el golpe es demasiado fuerte para bloquearlo (más de {GolpeMaximo})";
+            return $"demasiado fuerte para bloquear (más de {GolpeMaximo})";
 
         danio.Restante = 0;
         UsosRestantes--;
