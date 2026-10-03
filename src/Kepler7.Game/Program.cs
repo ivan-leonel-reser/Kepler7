@@ -1,4 +1,4 @@
-using Kepler7.Data.Memoria;
+using Kepler7.Core.Persistencia;
 
 namespace Kepler7.Game;
 
@@ -8,6 +8,6 @@ static class Program
     static void Main()
     {
         ApplicationConfiguration.Initialize();
-        Application.Run(new FormPrincipal(new RepositorioProgresoEnMemoria()));
+        Application.Run(new FormPrincipal(Repositorios.CrearProgreso()));
     }
 }

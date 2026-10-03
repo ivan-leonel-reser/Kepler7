@@ -1,8 +1,8 @@
 using System.Reflection;
 using Kepler7.Core.Combate;
-using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Comportamiento.Command;
 using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
+using Kepler7.Services;
 
 namespace Kepler7.Tests.Patrones;
 

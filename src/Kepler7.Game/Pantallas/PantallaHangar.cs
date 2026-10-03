@@ -1,6 +1,5 @@
-using Kepler7.Core.Comun;
+using Kepler7.BE;
 using Kepler7.Core.Patrones.Creacionales.Builder;
-using Kepler7.Core.Progreso;
 using Kepler7.Game.Controles;
 
 namespace Kepler7.Game.Pantallas;

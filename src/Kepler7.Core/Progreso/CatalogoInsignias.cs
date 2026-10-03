@@ -1,3 +1,5 @@
+using Kepler7.BE;
+
 namespace Kepler7.Core.Progreso;
 
 /// <summary>Una insignia por patrón. La condición la chequea el módulo de cada patrón.</summary>

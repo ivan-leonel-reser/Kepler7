@@ -1,6 +1,6 @@
+using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
-using Kepler7.Core.Progreso;
 
 namespace Kepler7.Tests.Combate;
 

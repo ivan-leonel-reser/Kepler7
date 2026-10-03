@@ -1,4 +1,6 @@
-namespace Kepler7.Core.Comun;
+using Kepler7.BE;
+
+namespace Kepler7.Services;
 
 public class Bitacora
 {

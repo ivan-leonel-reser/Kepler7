@@ -1,4 +1,5 @@
-using Kepler7.Core.Comun;
+using Kepler7.BE;
+using Kepler7.Services;
 
 namespace Kepler7.Core.Patrones.Estructurales.Facade;
 

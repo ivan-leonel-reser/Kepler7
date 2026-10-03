@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Servicios transversales que usan todas las capas: el azar inyectable y la bitácora. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kepler7.BE\Kepler7.BE.csproj" />
+  </ItemGroup>
+
+</Project>

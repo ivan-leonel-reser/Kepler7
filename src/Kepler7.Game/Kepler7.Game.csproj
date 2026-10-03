@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Interfaz. Habla con Core y usa las entidades y los servicios; a la capa de datos no la ve:
+       sin referencias transitivas, usar Kepler7.DAL desde un Form no compila. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kepler7.Core\Kepler7.Core.csproj" />
-    <ProjectReference Include="..\Kepler7.Data\Kepler7.Data.csproj" />
+    <ProjectReference Include="..\Kepler7.BE\Kepler7.BE.csproj" />
+    <ProjectReference Include="..\Kepler7.Services\Kepler7.Services.csproj" />
   </ItemGroup>
 
 </Project>

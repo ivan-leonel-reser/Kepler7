@@ -1,4 +1,4 @@
-using Kepler7.Core.Comun;
+using Kepler7.Services;
 
 namespace Kepler7.Core.Combate;
 

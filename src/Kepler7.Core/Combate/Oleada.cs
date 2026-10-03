@@ -1,8 +1,9 @@
-using Kepler7.Core.Comun;
+using Kepler7.BE;
 using Kepler7.Core.Patrones.Comportamiento.Command;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
 using Kepler7.Core.Patrones.Creacionales.Builder;
+using Kepler7.Services;
 
 namespace Kepler7.Core.Combate;
 

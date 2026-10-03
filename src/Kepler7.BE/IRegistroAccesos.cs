@@ -1,4 +1,4 @@
-namespace Kepler7.Core.Persistencia;
+namespace Kepler7.BE;
 
 /// <summary>Registro persistente de los intentos denegados a la bóveda (patrón Proxy).</summary>
 public interface IRegistroAccesos

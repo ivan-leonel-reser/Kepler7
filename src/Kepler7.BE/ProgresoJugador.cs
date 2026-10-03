@@ -1,4 +1,4 @@
-namespace Kepler7.Core.Progreso;
+namespace Kepler7.BE;
 
 /// <summary>Todo lo que se guarda entre partidas.</summary>
 public class ProgresoJugador

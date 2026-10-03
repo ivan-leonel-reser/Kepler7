@@ -1,4 +1,4 @@
-namespace Kepler7.Core.Progreso;
+namespace Kepler7.BE;
 
 public enum Patron
 {

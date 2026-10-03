@@ -22,10 +22,20 @@ dotnet run --project src/Kepler7.Game
 
 ## Estructura
 
-| Carpeta | Contenido |
-|---|---|
-| `src/Kepler7.Core` | Lógica del juego y los 12 patrones de diseño (sin dependencias de UI) |
-| `src/Kepler7.Data` | Persistencia en SQL Server |
-| `src/Kepler7.Game` | Interfaz Windows Forms |
-| `tests/Kepler7.Tests` | Pruebas automatizadas de Core |
-| `db/` | Scripts de creación de la base |
+La solución está organizada en cinco capas:
+
+| Proyecto | Capa | Contenido |
+|---|---|---|
+| `src/Kepler7.BE` | Entidades | Lo que se guarda y viaja entre capas: progreso, insignias, entradas de bitácora y los contratos de persistencia |
+| `src/Kepler7.Services` | Servicios transversales | Azar inyectable y bitácora |
+| `src/Kepler7.DAL` | Acceso a datos | Repositorios que implementan los contratos de BE |
+| `src/Kepler7.Core` | Lógica de negocio | Reglas del juego y los 12 patrones de diseño, sin dependencias de UI |
+| `src/Kepler7.Game` | Interfaz | Windows Forms: dibuja, captura la entrada y llama a Core |
+
+Además están `tests/Kepler7.Tests` (pruebas automatizadas, incluidas las de dependencias entre capas) y `db/` (scripts de creación de la base).
+
+Dependencias entre capas, tal como las declaran los `ProjectReference`:
+
+`Game -> Core, BE, Services` · `Core -> DAL, BE, Services` · `DAL -> BE, Services` · `Services -> BE` · `BE` no referencia a ninguna otra.
+
+La interfaz no referencia a la capa de datos: los repositorios se los pide a Core. La lógica y los patrones viven en `Kepler7.Core`, que no referencia a Windows Forms.

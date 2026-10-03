@@ -1,9 +1,9 @@
+using Kepler7.BE;
 using Kepler7.Core.Combate;
-using Kepler7.Core.Comun;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
-using Kepler7.Core.Persistencia;
 using Kepler7.Core.Progreso;
+using Kepler7.Services;
 
 namespace Kepler7.Core.Juego;
 

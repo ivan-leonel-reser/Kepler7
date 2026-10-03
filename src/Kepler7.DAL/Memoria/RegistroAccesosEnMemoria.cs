@@ -1,6 +1,6 @@
-using Kepler7.Core.Persistencia;
+using Kepler7.BE;
 
-namespace Kepler7.Data.Memoria;
+namespace Kepler7.DAL.Memoria;
 
 public class RegistroAccesosEnMemoria : IRegistroAccesos
 {

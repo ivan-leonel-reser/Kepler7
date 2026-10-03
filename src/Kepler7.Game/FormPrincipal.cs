@@ -1,7 +1,7 @@
-using Kepler7.Core.Comun;
+using Kepler7.BE;
 using Kepler7.Core.Juego;
-using Kepler7.Core.Persistencia;
 using Kepler7.Game.Pantallas;
+using Kepler7.Services;
 
 namespace Kepler7.Game;
 
