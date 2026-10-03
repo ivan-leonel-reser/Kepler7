@@ -16,7 +16,7 @@ public class CalculadorPrecio : IVisitor
     public void Visitar(Arma arma)
     {
         var valor = arma.Envenenada ? arma.Precio + arma.Precio / 2 : arma.Precio;
-        Sumar(arma, valor, arma.Envenenada ? " (envenenada, vale la mitad más)" : "");
+        Sumar(arma, valor, arma.Envenenada ? " (envenenada: vale la mitad más)" : "");
     }
 
     public void Visitar(Pocion pocion) => Sumar(pocion, pocion.Precio);
