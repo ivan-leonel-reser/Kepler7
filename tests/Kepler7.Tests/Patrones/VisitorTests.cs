@@ -35,6 +35,76 @@ public class VisitorTests
             visitante.Visitas);
     }
 
+    [TestMethod]
+    public void CalculadorPrecio_SumaElValorDeTodoElInventario()
+    {
+        var calculador = new CalculadorPrecio();
+
+        _inventario.Aplicar(calculador);
+
+        Assert.AreEqual(30 + 15 + 10 + 25, calculador.Total);
+        Assert.HasCount(4, calculador.Detalle);
+    }
+
+    [TestMethod]
+    public void CalculadorPrecio_UnArmaEnvenenadaValeLaMitadMas()
+    {
+        _rifle.Envenenada = true;
+        var calculador = new CalculadorPrecio();
+
+        _inventario.Aplicar(calculador);
+
+        Assert.AreEqual(45 + 15 + 10 + 25, calculador.Total);
+    }
+
+    [TestMethod]
+    public void ContadorArmas_SoloLeInteresanLasArmas()
+    {
+        var contador = new ContadorArmas();
+
+        _inventario.Aplicar(contador);
+
+        Assert.AreEqual(2, contador.Cantidad);
+        Assert.AreEqual(6, contador.DanioTotal);
+        Assert.HasCount(2, contador.Detalle);
+    }
+
+    [TestMethod]
+    public void AplicadorVeneno_EnvenenaLasArmasYNoTocaLoDemas()
+    {
+        var veneno = new AplicadorVeneno();
+
+        _inventario.Aplicar(veneno);
+
+        Assert.AreEqual(2, veneno.Envenenadas);
+        Assert.IsTrue(_rifle.Envenenada && _cuchillo.Envenenada);
+        Assert.AreEqual("Poción · cura 10", _botiquin.Descripcion);
+        Assert.AreEqual("Armadura · defensa 2", _chaleco.Descripcion);
+    }
+
+    [TestMethod]
+    public void AplicadorVeneno_LaSegundaPasadaNoEnvenenaDeNuevo()
+    {
+        _inventario.Aplicar(new AplicadorVeneno());
+        var segunda = new AplicadorVeneno();
+
+        _inventario.Aplicar(segunda);
+
+        Assert.AreEqual(0, segunda.Envenenadas);
+        StringAssert.Contains(segunda.Resultado, "No quedaba");
+    }
+
+    [TestMethod]
+    public void UnVisitanteVeLoQueDejoElAnterior()
+    {
+        _inventario.Aplicar(new AplicadorVeneno());
+        var contador = new ContadorArmas();
+
+        _inventario.Aplicar(contador);
+
+        Assert.AreEqual(2, contador.Envenenadas);
+    }
+
     private class VisitanteQueAnota : IVisitor
     {
         public List<string> Visitas { get; } = [];
