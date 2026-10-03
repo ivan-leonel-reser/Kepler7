@@ -1,6 +1,7 @@
 using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
+using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Progreso;
@@ -17,6 +18,7 @@ public class Partida
     private readonly IRepositorioProgreso _repositorio;
     private readonly IngenieroJefe _ingeniero = new();
     private readonly HashSet<string> _recetasUsadas = [];
+    private readonly HashSet<string> _analizadoresUsados = [];
 
     public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio)
     {
@@ -35,6 +37,9 @@ public class Partida
 
     /// <summary>Las capas de defensa que lleva el escuadrón y su orden.</summary>
     public Armeria Armeria { get; } = new();
+
+    /// <summary>El arsenal de la estación y el botín que van dejando las oleadas.</summary>
+    public Inventario Almacen { get; } = AlmacenInicial();
 
     /// <summary>La nave que espera en el Hangar para la próxima oleada. Hay lugar para una sola.</summary>
     public Nave? NaveDeApoyo { get; private set; }
@@ -82,6 +87,30 @@ public class Partida
         _recetasUsadas.Add(receta.Nombre);
         Bitacora.Registrar("Hangar", $"Nave {nave.Modelo} lista para la próxima oleada: {nave.Apoyo}.", TipoEntrada.Exito);
         return nave;
+    }
+
+    /// <summary>Pasea por todo el Almacén al analizador que eligió el jugador.</summary>
+    public void AnalizarAlmacen(IVisitor visitante)
+    {
+        Almacen.Aplicar(visitante);
+        _analizadoresUsados.Add(visitante.Nombre);
+        Bitacora.Registrar("Almacén", $"{visitante.Nombre}: {visitante.Resultado}");
+    }
+
+    /// <summary>Vende todo lo que hay en el Almacén al valor que da el calculador de precio.</summary>
+    /// <returns>Los créditos que entraron.</returns>
+    public int VenderAlmacen()
+    {
+        if (Almacen.Items.Count == 0)
+            return 0;
+
+        var calculador = new CalculadorPrecio();
+        Almacen.Aplicar(calculador);
+        Progreso.GanarCreditos(calculador.Total);
+        Bitacora.Registrar("Almacén", $"Se vendieron {Almacen.Items.Count} objetos por {calculador.Total} créditos.", TipoEntrada.Exito);
+        Almacen.Vaciar();
+        Guardar();
+        return calculador.Total;
     }
 
     public Oleada EmpezarOleada()
@@ -136,9 +165,13 @@ public class Partida
         Progreso.GanarCreditos(creditos);
         var subioNivel = Progreso.GanarXp(xp);
 
+        var botin = GeneradorBotin.Crear(oleada.Numero);
+        Almacen.AgregarTodos(botin);
+
         // Pasado el ataque, la fachada vuelve a poner la estación en su turno normal.
         var normalidad = ControlCentral.IniciarTurno();
         Bitacora.Registrar("Oleada", $"Oleada {oleada.Numero} superada: +{xp} XP, +{creditos} créditos.", TipoEntrada.Exito);
+        Bitacora.Registrar("Almacén", $"Botín de la oleada: {string.Join(", ", botin.Select(i => i.Nombre))}.", TipoEntrada.Exito);
         if (Progreso.EstacionSalvada)
             Bitacora.Registrar("Consejo", "Kepler-7 resistió las 6 oleadas. La estación está a salvo.", TipoEntrada.Exito);
 
@@ -162,6 +195,9 @@ public class Partida
 
         if (OleadaActual is { } actual && actual.ClasesQueJugaron.Count == Enum.GetValues<ClaseUnidad>().Length)
             Sumar(nuevas, OtorgarInsignia(Patron.TemplateMethod));
+
+        if (_analizadoresUsados.Count == CatalogoVisitantes.Crear().Count)
+            Sumar(nuevas, OtorgarInsignia(Patron.Visitor));
 
         if (OleadaActual is { GolpesAbsorbidos: > 0 })
             Sumar(nuevas, OtorgarInsignia(Patron.ChainOfResponsibility));
@@ -197,6 +233,13 @@ public class Partida
         UnidadEscuadron.Crear("Paz", ClaseUnidad.Medico),
         UnidadEscuadron.Crear("Luna", ClaseUnidad.Francotirador),
     ];
+
+    private static Inventario AlmacenInicial()
+    {
+        var almacen = new Inventario();
+        almacen.AgregarTodos(GeneradorBotin.ArsenalInicial());
+        return almacen;
+    }
 
     private void AvisarEstacionApagada() =>
         Bitacora.Registrar("Control central", "La estación está apagada. Iniciá un turno desde el Control Central.", TipoEntrada.Advertencia);

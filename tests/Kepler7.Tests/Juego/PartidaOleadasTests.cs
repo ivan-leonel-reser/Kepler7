@@ -3,6 +3,7 @@ using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
 using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
+using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Tests.Dobles;
@@ -232,6 +233,57 @@ public class PartidaOleadasTests
         Assert.IsTrue(_partida.Escuadron.All(u => u.Vida == u.VidaMaxima));
         Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen.StartsWith("Defensas") && e.Mensaje.Contains("no pierde vida")));
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.ChainOfResponsibility));
+    }
+
+    [TestMethod]
+    public void GanarUnaOleadaDejaSuBotinEnElAlmacen()
+    {
+        var alEmpezar = _partida.Almacen.Items.Count;
+        _partida.ControlCentral.IniciarTurno();
+        GanarRapido(_partida.EmpezarOleada());
+
+        _partida.CerrarOleada();
+
+        Assert.HasCount(alEmpezar + GeneradorBotin.Crear(1).Count, _partida.Almacen.Items);
+        Assert.IsTrue(_partida.Almacen.Items.Any(i => i.Nombre == "Aguijón de Zángano"));
+    }
+
+    [TestMethod]
+    public void VenderElAlmacenDaLosCreditosQueCalculaElVisitante()
+    {
+        var calculador = new CalculadorPrecio();
+        _partida.Almacen.Aplicar(calculador);
+
+        var ganado = _partida.VenderAlmacen();
+
+        Assert.AreEqual(calculador.Total, ganado);
+        Assert.AreEqual(calculador.Total, _partida.Progreso.Creditos);
+        Assert.IsEmpty(_partida.Almacen.Items);
+        Assert.AreEqual(0, _partida.VenderAlmacen());
+    }
+
+    [TestMethod]
+    public void EnvenenarLasArmasSubeLoQueSeCobraAlVender()
+    {
+        var sinVeneno = new CalculadorPrecio();
+        _partida.Almacen.Aplicar(sinVeneno);
+
+        _partida.AnalizarAlmacen(new AplicadorVeneno());
+
+        Assert.IsGreaterThan(sinVeneno.Total, _partida.VenderAlmacen());
+    }
+
+    [TestMethod]
+    public void UsarLosTresAnalizadoresDaLaInsigniaDeVisitor()
+    {
+        _partida.AnalizarAlmacen(new CalculadorPrecio());
+        _partida.AnalizarAlmacen(new CalculadorPrecio());
+        _partida.AnalizarAlmacen(new ContadorArmas());
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Visitor));
+
+        _partida.AnalizarAlmacen(new AplicadorVeneno());
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Visitor));
     }
 
     [TestMethod]
