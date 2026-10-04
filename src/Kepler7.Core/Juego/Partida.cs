@@ -1,6 +1,7 @@
 using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
+using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Creacionales.Prototype;
@@ -209,9 +210,13 @@ public class Partida
         if (!PuedeDefender)
             throw new InvalidOperationException("Para defender una oleada la estación tiene que estar operativa.");
 
+        // Si en el Almacén quedaron armas envenenadas, el escuadrón sale a pelear con ellas.
+        var armasEnvenenadas = Almacen.Items.OfType<Arma>().Any(a => a.Envenenada);
         foreach (var unidad in Escuadron)
         {
             unidad.Curar(unidad.VidaMaxima);
+            unidad.CambiarEstado(new Normal());
+            unidad.EfectoAlGolpear = armasEnvenenadas ? EfectoGolpe.Veneno : EfectoGolpe.Ninguno;
             Armeria.Equipar(unidad, Aleatorio);
         }
 
@@ -227,6 +232,8 @@ public class Partida
             // La nave sale con esta oleada: para la siguiente hay que armar otra.
             NaveDeApoyo = null;
         }
+        if (armasEnvenenadas)
+            oleada.Bitacora.Registrar("Almacén", "El escuadrón lleva armas envenenadas: cada golpe que saque vida envenena al enemigo.", TipoEntrada.Exito);
         var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).Count();
         oleada.Bitacora.Registrar("Oleada", $"Oleada {numero} de {ProgresoJugador.OleadasTotales}: {enemigos} enemigos. Le toca al escuadrón.", TipoEntrada.Peligro);
 
@@ -301,6 +308,9 @@ public class Partida
 
         if (OleadaActual is { HackeosRealizados: > 0 })
             Sumar(nuevas, OtorgarInsignia(Patron.Strategy));
+
+        if (OleadaActual is { Estado: EstadoOleada.Victoria } ganada && ganada.SobrevivientesConEstado.Any())
+            Sumar(nuevas, OtorgarInsignia(Patron.State));
 
         return nuevas;
     }
