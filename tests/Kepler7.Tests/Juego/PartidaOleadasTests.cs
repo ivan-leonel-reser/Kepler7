@@ -5,6 +5,7 @@ using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
+using Kepler7.Core.Patrones.Creacionales.Prototype;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Tests.Dobles;
 
@@ -353,6 +354,84 @@ public class PartidaOleadasTests
         _partida.Reclutar(_partida.Censo.Tripulantes[0]);
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Flyweight));
+    }
+
+    [TestMethod]
+    public void ElClonSeSumaAlEscuadronConLoQueAprendio()
+    {
+        _partida.Progreso.GanarCreditos(Partida.CostoClon);
+        var francotirador = _partida.Escuadron.Single(u => u.Clase == ClaseUnidad.Francotirador);
+        var original = _partida.FichaDe(francotirador);
+        var clon = (FichaSoldado)original.Clonar();
+        clon.Nombre = "Luna II";
+        clon.Aprender("Tiro certero");
+
+        var unidad = _partida.SumarClon(original, clon);
+
+        Assert.HasCount(5, _partida.Escuadron);
+        Assert.AreEqual("Luna II", unidad.Nombre);
+        Assert.AreEqual(ClaseUnidad.Francotirador, unidad.Clase);
+        Assert.AreEqual(francotirador.Ataque + 2, unidad.Ataque);
+        Assert.AreSame(clon, _partida.Clon);
+        Assert.HasCount(1, original.Habilidades);
+        Assert.AreEqual(0, _partida.Progreso.Creditos);
+    }
+
+    [TestMethod]
+    public void SinCreditosNoSeSumaElClon()
+    {
+        var original = _partida.FichaDe(_partida.Escuadron[0]);
+
+        Assert.IsFalse(_partida.PuedeClonar);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _partida.SumarClon(original, (FichaSoldado)original.Clonar()));
+        Assert.HasCount(4, _partida.Escuadron);
+    }
+
+    [TestMethod]
+    public void UnClonNuevoReemplazaAlAnteriorYNoSePuedeClonarAlClon()
+    {
+        _partida.Progreso.GanarCreditos(2 * Partida.CostoClon);
+        var original = _partida.FichaDe(_partida.Escuadron[0]);
+        var primero = _partida.SumarClon(original, (FichaSoldado)original.Clonar());
+        Assert.DoesNotContain(primero, _partida.Clonables.ToList());
+
+        var segundo = _partida.SumarClon(original, (FichaSoldado)original.Clonar());
+
+        Assert.HasCount(5, _partida.Escuadron);
+        Assert.DoesNotContain(primero, _partida.Escuadron);
+        Assert.Contains(segundo, _partida.Escuadron);
+    }
+
+    [TestMethod]
+    public void ElClonDeUnReclutaConservaElBonusDeLaEspecie()
+    {
+        _partida.Progreso.GanarCreditos(Partida.CostoRecluta + Partida.CostoClon);
+        _partida.GenerarCenso();
+        var tripulante = _partida.Censo.Tripulantes.First(t => t.Especie.Nombre == "Kepleriano");
+        var recluta = _partida.Reclutar(tripulante);
+        var original = _partida.FichaDe(recluta);
+
+        var unidad = _partida.SumarClon(original, (FichaSoldado)original.Clonar());
+
+        Assert.AreSame(tripulante.Especie, original.Especie);
+        Assert.AreEqual(recluta.VidaMaxima, unidad.VidaMaxima);
+        Assert.HasCount(6, _partida.Escuadron);
+    }
+
+    [TestMethod]
+    public void ModificarElClonDaLaInsigniaDePrototype()
+    {
+        _partida.Progreso.GanarCreditos(2 * Partida.CostoClon);
+        var original = _partida.FichaDe(_partida.Escuadron[0]);
+        _partida.SumarClon(original, (FichaSoldado)original.Clonar());
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Prototype));
+
+        var modificado = (FichaSoldado)original.Clonar();
+        modificado.Aprender("Resistencia");
+        _partida.SumarClon(original, modificado);
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Prototype));
+        Assert.HasCount(1, original.Habilidades);
     }
 
     [TestMethod]
