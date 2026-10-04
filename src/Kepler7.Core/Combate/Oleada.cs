@@ -1,5 +1,6 @@
 using Kepler7.BE;
 using Kepler7.Core.Patrones.Comportamiento.Command;
+using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
 using Kepler7.Core.Patrones.Creacionales.Builder;
@@ -23,6 +24,7 @@ public class Oleada
     private readonly HashSet<ClaseUnidad> _clasesQueJugaron = [];
     private readonly Queue<Enemigo> _enemigosPorJugar = new();
     private readonly List<JugadaEnemiga> _ultimasJugadas = [];
+    private readonly HashSet<Unidad> _cambiaronDeEstado = [];
 
     public Oleada(int numero, IEnumerable<UnidadEscuadron> escuadron, IEnumerable<Enemigo> enemigos, IAleatorio aleatorio)
     {
@@ -65,13 +67,17 @@ public class Oleada
 
     public int HackeosDisponibles => HackeosPorOleada - HackeosRealizados;
 
+    /// <summary>Las unidades del escuadrón que cambiaron de estado en esta oleada y siguen en pie.</summary>
+    public IEnumerable<UnidadEscuadron> SobrevivientesConEstado => Escuadron.Where(_cambiaronDeEstado.Contains);
+
     public bool YaActuo(Unidad unidad) => _yaActuaron.Contains(unidad);
 
+    // Lo que la unidad puede hacer depende también de su estado: aturdida, pierde el turno.
     public bool PuedeActuar(UnidadEscuadron unidad) =>
-        Estado == EstadoOleada.TurnoJugador && unidad.EstaViva && !YaActuo(unidad);
+        Estado == EstadoOleada.TurnoJugador && unidad.EstaViva && !YaActuo(unidad) && unidad.Estado.PuedeActuar;
 
     public bool PuedeMover(UnidadEscuadron unidad) =>
-        PuedeActuar(unidad) && Campo.HayLugar(unidad.Bando, Opuesta(unidad.Fila));
+        PuedeActuar(unidad) && unidad.Estado.Mover(unidad) && Campo.HayLugar(unidad.Bando, Opuesta(unidad.Fila));
 
     public IReadOnlyList<Unidad> ObjetivosDeAtaque(UnidadEscuadron unidad) =>
         PuedeActuar(unidad) && unidad.PuedeAtacar ? Campo.Atacables(unidad.Bando) : [];
@@ -188,6 +194,12 @@ public class Oleada
         Comandos.ConfirmarTurno();
         _yaActuaron.Clear();
         _ultimasJugadas.Clear();
+
+        CerrarTurnoDe(Bando.Escuadron);
+        ChequearFin();
+        if (Terminada)
+            return;
+
         foreach (var enemigo in Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().OrderBy(e => e.Fila))
             _enemigosPorJugar.Enqueue(enemigo);
 
@@ -210,6 +222,11 @@ public class Oleada
             return jugada;
         }
 
+        CerrarTurnoDe(Bando.Enjambre);
+        ChequearFin();
+        if (Terminada)
+            return null;
+
         Turno++;
         Estado = EstadoOleada.TurnoJugador;
         Bitacora.Registrar(Origen, $"Turno {Turno}: le toca al escuadrón.");
@@ -227,7 +244,9 @@ public class Oleada
     private JugadaEnemiga JugarEnemigo(Enemigo enemigo)
     {
         var ia = enemigo.Estrategia.Nombre;
-        var decision = Validar(enemigo, enemigo.DecidirAccion(new Contexto(Campo, Turno, Aleatorio)));
+        var decision = enemigo.Estado.PuedeActuar
+            ? Validar(enemigo, enemigo.DecidirAccion(new Contexto(Campo, Turno, Aleatorio)))
+            : DecisionIA.Esperar($"está {enemigo.Estado.Nombre.ToLowerInvariant()} y pierde el turno");
         var objetivo = decision.Accion == AccionIA.Atacar ? decision.Objetivo : null;
 
         var jugada = new JugadaEnemiga(enemigo, objetivo, Aplicar(enemigo, decision), ia, decision);
@@ -241,8 +260,8 @@ public class Oleada
         var sePuede = decision.Accion switch
         {
             AccionIA.Atacar => enemigo.PuedeAtacar && decision.Objetivo is { } objetivo && Campo.Atacables(Bando.Enjambre).Contains(objetivo),
-            AccionIA.Avanzar => enemigo.Fila != Fila.Vanguardia && Campo.HayLugar(Bando.Enjambre, Fila.Vanguardia),
-            AccionIA.Retroceder => enemigo.Fila != Fila.Retaguardia && Campo.HayLugar(Bando.Enjambre, Fila.Retaguardia),
+            AccionIA.Avanzar => enemigo.Estado.Mover(enemigo) && enemigo.Fila != Fila.Vanguardia && Campo.HayLugar(Bando.Enjambre, Fila.Vanguardia),
+            AccionIA.Retroceder => enemigo.Estado.Mover(enemigo) && enemigo.Fila != Fila.Retaguardia && Campo.HayLugar(Bando.Enjambre, Fila.Retaguardia),
             _ => true,
         };
         return sePuede ? decision : DecisionIA.Esperar("no pudo hacer lo que quería");
@@ -254,13 +273,15 @@ public class Oleada
         {
             case AccionIA.Atacar when decision.Objetivo is { } objetivo:
             {
-                var golpe = new Danio(enemigo.Ataque, TipoDanio.Fisico, enemigo);
+                var estadoAnterior = objetivo.Estado;
+                var golpe = new Danio(enemigo.DanioDeAtaque(), TipoDanio.Fisico, enemigo);
                 var vidaQuitada = objetivo.RecibirGolpe(golpe);
                 var texto = !objetivo.EstaViva ? $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})"
                     : vidaQuitada == 0 ? $"{enemigo.Nombre} ataca a {objetivo.Nombre}, pero no le saca vida"
                     : $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})";
                 var entrada = Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
                 RegistrarDefensa(objetivo, golpe);
+                RegistrarCambioDeEstado(objetivo, estadoAnterior);
                 return entrada;
             }
             case AccionIA.Avanzar:
@@ -270,7 +291,9 @@ public class Oleada
                 Campo.Mover(enemigo, Fila.Retaguardia);
                 return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} se repliega");
             default:
-                return Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} espera");
+                return Bitacora.Registrar("Enjambre", enemigo.Estado.PuedeActuar
+                    ? $"{enemigo.Nombre} espera"
+                    : $"{enemigo.Nombre} está {enemigo.Estado.Nombre.ToLowerInvariant()} y pierde el turno");
         }
     }
 
@@ -286,11 +309,41 @@ public class Oleada
         Bitacora.Registrar($"Defensas · {objetivo.Nombre}", golpe.DescribirRecorrido(), frenado ? TipoEntrada.Exito : TipoEntrada.Info);
     }
 
+    // Cuando un golpe deja a la unidad en otro estado (State), queda anotado.
+    private void RegistrarCambioDeEstado(Unidad unidad, IEstadoPersonaje anterior)
+    {
+        if (!unidad.EstaViva || ReferenceEquals(unidad.Estado, anterior))
+            return;
+
+        _cambiaronDeEstado.Add(unidad);
+        Bitacora.Registrar($"Estado · {unidad.Nombre}",
+            $"pasa de {anterior.Nombre} a {unidad.Estado.Nombre}: {unidad.Estado.Efecto}", TipoEntrada.Advertencia);
+    }
+
+    // Al cerrar el turno de un bando, el estado de cada una de sus unidades hace lo suyo:
+    // el veneno resta vida, la aturdida se recupera, la furiosa se calma si ya está mejor.
+    private void CerrarTurnoDe(Bando bando)
+    {
+        foreach (var unidad in Campo.UnidadesVivasDe(bando).ToList())
+        {
+            var anterior = unidad.Estado;
+            if (anterior.TerminarTurno(unidad) is not { } aviso)
+                continue;
+
+            if (!ReferenceEquals(unidad.Estado, anterior))
+                _cambiaronDeEstado.Add(unidad);
+            Bitacora.Registrar($"Estado · {unidad.Nombre}", aviso, unidad.EstaViva ? TipoEntrada.Advertencia : TipoEntrada.Peligro);
+        }
+    }
+
     // La orden ya está validada. El turno de la unidad sigue sus etapas (Template Method),
     // arma el comando y deja cada etapa en la bitácora.
     private void JugarTurno(UnidadEscuadron unidad, OrdenTurno orden)
     {
+        var estadoObjetivo = orden.Objetivo?.Estado;
         TurnoUnidad.Para(unidad, Campo).EjecutarTurno(orden, Comandos, Bitacora);
+        if (orden.Objetivo is { } objetivo && estadoObjetivo is not null)
+            RegistrarCambioDeEstado(objetivo, estadoObjetivo);
         _yaActuaron.Add(unidad);
         _clasesQueJugaron.Add(unidad.Clase);
         ChequearFin();

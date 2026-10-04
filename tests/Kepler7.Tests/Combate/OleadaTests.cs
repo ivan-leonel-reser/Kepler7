@@ -1,4 +1,5 @@
 using Kepler7.Core.Combate;
+using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Tests.Dobles;
 
@@ -217,6 +218,117 @@ public class OleadaTests
 
         Assert.AreEqual(EstadoOleada.Derrota, oleada.Estado);
         Assert.IsTrue(oleada.Terminada);
+    }
+
+    [TestMethod]
+    public void UnaUnidadAturdidaPierdeSuTurnoYDespuesVuelveAJugar()
+    {
+        var coloso = new Enemigo("Coloso", 40, 5) { EfectoAlGolpear = EfectoGolpe.Aturdimiento };
+        var oleada = CrearOleada(coloso);
+
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.IsInstanceOfType<Aturdido>(_soldado.Estado);
+        Assert.IsFalse(oleada.PuedeActuar(_soldado));
+        Assert.IsFalse(oleada.PuedeMover(_soldado));
+        Assert.HasCount(0, oleada.ObjetivosDeAtaque(_soldado));
+        Assert.ThrowsExactly<InvalidOperationException>(() => oleada.Atacar(_soldado, coloso));
+        Assert.IsTrue(oleada.PuedeActuar(_francotirador));
+
+        // Al terminar el turno que perdió se recupera, y el golpe siguiente no la vuelve a aturdir.
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.IsInstanceOfType<Normal>(_soldado.Estado);
+        Assert.IsTrue(oleada.PuedeActuar(_soldado));
+        Assert.Contains(_soldado, oleada.SobrevivientesConEstado.ToList());
+    }
+
+    [TestMethod]
+    public void ElVenenoLeSacaVidaAlEscuadronAlTerminarSuTurno()
+    {
+        var escupidor = new Enemigo("Escupidor", 9, 3, atacaADistancia: true) { EfectoAlGolpear = EfectoGolpe.Veneno };
+        var oleada = CrearOleada(escupidor);
+
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+        Assert.IsInstanceOfType<Envenenado>(_soldado.Estado);
+        Assert.AreEqual(27, _soldado.Vida);
+
+        oleada.TerminarTurno();
+
+        Assert.AreEqual(27 - Envenenado.DanioPorTurno, _soldado.Vida);
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Estado · Rojas" && e.Mensaje.Contains("Envenenado")));
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Estado · Rojas" && e.Mensaje.Contains("veneno")));
+    }
+
+    [TestMethod]
+    public void UnEnemigoAturdidoPierdeSuTurno()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+        zangano.CambiarEstado(new Aturdido());
+
+        oleada.TerminarTurno();
+        var jugada = oleada.JugarSiguienteEnemigo();
+
+        Assert.AreEqual(AccionIA.Esperar, jugada!.Decision.Accion);
+        Assert.IsNull(jugada.Objetivo);
+        Assert.AreEqual(30, _soldado.Vida);
+
+        Assert.IsNull(oleada.JugarSiguienteEnemigo());
+        Assert.IsInstanceOfType<Normal>(zangano.Estado);
+    }
+
+    [TestMethod]
+    public void UnEnemigoMuyHeridoEntraEnBerserkYPegaMasFuerte()
+    {
+        var zangano = new Enemigo("Zangano", 12, 3);
+        var oleada = CrearOleada(zangano);
+
+        // El soldado carga: 8 + 2. El zángano queda en 2 de 12.
+        oleada.Atacar(_soldado, zangano);
+        Assert.IsInstanceOfType<Berserk>(zangano.Estado);
+
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.AreEqual(30 - (3 + Berserk.BonusAtaque), _soldado.Vida);
+    }
+
+    [TestMethod]
+    public void DeshacerUnAtaqueDevuelveElEstadoDelObjetivo()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+        _soldado.EfectoAlGolpear = EfectoGolpe.Veneno;
+
+        oleada.Atacar(_soldado, zangano);
+        Assert.IsInstanceOfType<Envenenado>(zangano.Estado);
+
+        oleada.Deshacer();
+        Assert.IsInstanceOfType<Normal>(zangano.Estado);
+        Assert.AreEqual(30, zangano.Vida);
+
+        oleada.Rehacer();
+        Assert.IsInstanceOfType<Envenenado>(zangano.Estado);
+    }
+
+    [TestMethod]
+    public void ElVenenoPuedeTerminarLaOleada()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+        _soldado.EfectoAlGolpear = EfectoGolpe.Veneno;
+
+        oleada.Atacar(_soldado, zangano);
+        zangano.PerderVida(zangano.Vida - 1);
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+
+        Assert.IsFalse(zangano.EstaViva);
+        Assert.AreEqual(EstadoOleada.Victoria, oleada.Estado);
     }
 
     // Quiere pegarle a alguien de la retaguardia aunque adelante todavía haya unidades.
