@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using Kepler7.Core.Combate;
+using Kepler7.Core.Patrones.Comportamiento.State;
 
 namespace Kepler7.Game.Controles;
 
@@ -12,6 +13,9 @@ internal class VistaCampo : Control
     private const int EntreColumnas = 16;
     private const int EntreBandos = 60;
     private const int Margen = 24;
+
+    // Los estados que se explican debajo del campo. El normal no lleva marca.
+    private static readonly IEstadoPersonaje[] Leyenda = [new Envenenado(), new Aturdido(), new Berserk()];
 
     private readonly Oleada _oleada;
     private readonly Dictionary<Unidad, Rectangle> _zonas = [];
@@ -92,6 +96,25 @@ internal class VistaCampo : Control
         Columna(g, Bando.Escuadron, Fila.Vanguardia, xEscuadronAdelante, arriba, ancho);
         Columna(g, Bando.Enjambre, Fila.Vanguardia, xEnjambreAdelante, arriba, ancho);
         Columna(g, Bando.Enjambre, Fila.Retaguardia, xEnjambreAtras, arriba, ancho);
+
+        var abajo = arriba + altoColumna;
+        if (Height - abajo >= 34)
+            DibujarLeyenda(g, abajo + 12);
+    }
+
+    private void DibujarLeyenda(Graphics g, int y)
+    {
+        var textos = Leyenda.Select(e => $"{e.Nombre}: {e.Efecto}").ToList();
+        var anchos = textos.Select(t => TextRenderer.MeasureText(g, t, Tema.Chica).Width).ToList();
+        var x = (Width - anchos.Sum() - Leyenda.Length * 16 - (Leyenda.Length - 1) * 20) / 2;
+
+        for (var i = 0; i < Leyenda.Length; i++)
+        {
+            var color = ColorTranslator.FromHtml(Leyenda[i].Color);
+            IconoEstado(g, Leyenda[i], new Rectangle(x, y + 3, 11, 11), color);
+            TextRenderer.DrawText(g, textos[i], Tema.Chica, new Point(x + 16, y), color);
+            x += 16 + anchos[i] + 20;
+        }
     }
 
     private static void Titulo(Graphics g, string texto, int desde, int hasta, int y, Color color) =>
@@ -126,6 +149,8 @@ internal class VistaCampo : Control
         var seleccionada = unidad == _seleccionada;
         var esObjetivo = _objetivos.Contains(unidad);
         var yaActuo = unidad is UnidadEscuadron && _oleada.YaActuo(unidad);
+        var estado = unidad.Estado;
+        var colorEstado = ColorTranslator.FromHtml(estado.Color);
 
         var fondo = golpeada ? Color.FromArgb(74, 28, 34) : seleccionada ? Tema.PanelResaltado : Tema.Panel;
         var (colorBorde, grosor) = golpeada ? (Tema.Peligro, 3f)
@@ -140,7 +165,19 @@ internal class VistaCampo : Control
 
         var colorNombre = yaActuo ? Tema.TextoTenue : unidad.Bando == Bando.Enjambre ? Tema.Peligro : Tema.Texto;
         TextRenderer.DrawText(g, unidad.Nombre, Tema.Negrita, new Point(zona.X + 10, zona.Y + 8), colorNombre);
-        TextRenderer.DrawText(g, Detalle(unidad), Tema.Chica, new Point(zona.X + 10, zona.Y + 29), Tema.TextoTenue);
+
+        // El estado (State) se ve en la tarjeta: franja de color, ícono y cómo quedó el ataque.
+        if (estado is Normal)
+        {
+            TextRenderer.DrawText(g, Detalle(unidad), Tema.Chica, new Point(zona.X + 10, zona.Y + 29), Tema.TextoTenue);
+        }
+        else
+        {
+            using (var franja = new SolidBrush(colorEstado))
+                g.FillRectangle(franja, zona.X + 1, zona.Y + 1, 4, zona.Height - 1);
+            IconoEstado(g, estado, new Rectangle(zona.X + 12, zona.Y + 32, 11, 11), colorEstado);
+            TextRenderer.DrawText(g, DetalleEstado(unidad), Tema.Chica, new Point(zona.X + 26, zona.Y + 29), colorEstado);
+        }
 
         var barra = new Rectangle(zona.X + 10, zona.Y + 52, zona.Width - 20, 9);
         var proporcion = unidad.Vida / (double)unidad.VidaMaxima;
@@ -154,6 +191,9 @@ internal class VistaCampo : Control
         if (yaActuo)
             TextRenderer.DrawText(g, "YA ACTUÓ", Tema.Chica, new Rectangle(zona.X, zona.Y + 64, zona.Width - 10, 18),
                 Tema.TextoTenue, TextFormatFlags.Right);
+        else if (unidad is UnidadEscuadron && !estado.PuedeActuar)
+            TextRenderer.DrawText(g, "PIERDE EL TURNO", Tema.Chica, new Rectangle(zona.X, zona.Y + 64, zona.Width - 10, 18),
+                colorEstado, TextFormatFlags.Right);
         // La IA de un enemigo no se ve hasta que se la revela (por ejemplo, al hackearlo).
         if (unidad is Enemigo enemigo)
             TextRenderer.DrawText(g, enemigo.IARevelada ? $"IA {enemigo.Estrategia.Nombre}" : "IA ???", Tema.Chica,
@@ -167,6 +207,36 @@ internal class VistaCampo : Control
         Barricada => "No ataca, cubre",
         _ => $"Atq {unidad.Ataque}" + (unidad.AtacaADistancia ? " · a distancia" : ""),
     };
+
+    private static string DetalleEstado(Unidad unidad) => unidad.Estado.PuedeActuar
+        ? $"{unidad.Estado.Nombre} · atq {unidad.DanioDeAtaque()}"
+        : $"{unidad.Estado.Nombre} · no actúa";
+
+    // Un ícono por estado, dibujado a mano: gota para el veneno, destello para el aturdimiento y punta para el berserk.
+    private static void IconoEstado(Graphics g, IEstadoPersonaje estado, Rectangle zona, Color color)
+    {
+        using var pincel = new SolidBrush(color);
+        using var lapiz = new Pen(color, 2f);
+        var medioX = zona.X + zona.Width / 2;
+        var medioY = zona.Y + zona.Height / 2;
+
+        switch (estado)
+        {
+            case Envenenado:
+                g.FillEllipse(pincel, zona.X + 1, zona.Y + 3, zona.Width - 2, zona.Height - 3);
+                g.FillPolygon(pincel, new Point[] { new Point(medioX, zona.Y - 2), new Point(zona.X + 1, zona.Y + 7), new Point(zona.Right - 1, zona.Y + 7) });
+                break;
+            case Aturdido:
+                g.DrawLine(lapiz, zona.Left + 1, zona.Top + 1, zona.Right - 1, zona.Bottom - 1);
+                g.DrawLine(lapiz, zona.Left + 1, zona.Bottom - 1, zona.Right - 1, zona.Top + 1);
+                g.DrawLine(lapiz, medioX, zona.Top - 1, medioX, zona.Bottom + 1);
+                g.DrawLine(lapiz, zona.Left - 1, medioY, zona.Right + 1, medioY);
+                break;
+            default:
+                g.FillPolygon(pincel, new Point[] { new Point(medioX, zona.Y - 1), new Point(zona.X, zona.Bottom), new Point(zona.Right, zona.Bottom) });
+                break;
+        }
+    }
 
     protected override void Dispose(bool disposing)
     {

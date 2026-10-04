@@ -332,7 +332,10 @@ public class Oleada
 
             if (!ReferenceEquals(unidad.Estado, anterior))
                 _cambiaronDeEstado.Add(unidad);
-            Bitacora.Registrar($"Estado · {unidad.Nombre}", aviso, unidad.EstaViva ? TipoEntrada.Advertencia : TipoEntrada.Peligro);
+            var tipo = unidad.EstaViva ? TipoEntrada.Advertencia
+                : bando == Bando.Escuadron ? TipoEntrada.Peligro
+                : TipoEntrada.Exito;
+            Bitacora.Registrar($"Estado · {unidad.Nombre}", aviso, tipo);
         }
     }
 
