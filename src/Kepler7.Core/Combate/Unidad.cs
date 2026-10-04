@@ -1,3 +1,5 @@
+using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
+
 namespace Kepler7.Core.Combate;
 
 /// <summary>Cualquier unidad del campo de batalla, del escuadrón o del Enjambre.</summary>
@@ -14,6 +16,7 @@ public abstract class Unidad
         Vida = vidaMaxima;
         Ataque = ataque;
         AtacaADistancia = atacaADistancia;
+        Defensas.Agregar(new Vida(this));
     }
 
     public string Nombre { get; }
@@ -26,17 +29,24 @@ public abstract class Unidad
     // La asigna el CampoBatalla al agregar o mover la unidad.
     public Fila Fila { get; internal set; }
 
+    /// <summary>Las capas que atraviesa cada golpe. Sin equipo, la cadena tiene solo la vida.</summary>
+    public CadenaDefensas Defensas { get; } = new();
+
     public bool EstaViva => Vida > 0;
 
     /// <summary>Cuerpo a cuerpo solo se ataca desde adelante; a distancia, desde cualquier fila.</summary>
     public bool PuedeAtacar => EstaViva && (AtacaADistancia || Fila == Fila.Vanguardia);
 
     /// <summary>
-    /// Todo golpe en combate entra por acá. Por ahora va directo a la vida;
-    /// las capas de defensa (Chain) y los estados (State) se enganchan en este punto.
+    /// Todo golpe en combate entra por acá y recorre la cadena de defensas (Chain of Responsibility).
+    /// Los estados (State) se enganchan en este mismo punto.
     /// </summary>
     /// <returns>Cuánta vida perdió realmente.</returns>
-    public virtual int RecibirGolpe(Danio danio) => PerderVida(danio.Restante);
+    public virtual int RecibirGolpe(Danio danio)
+    {
+        Defensas.Manejar(danio);
+        return danio.VidaPerdida;
+    }
 
     /// <summary>Resta vida sin pasar por las defensas. Devuelve cuánta vida perdió realmente.</summary>
     public int PerderVida(int cantidad)
