@@ -9,4 +9,6 @@ public class Barricada : Unidad
         : base(nombre, Bando.Escuadron, VidaInicial, ataque: 0, atacaADistancia: false)
     {
     }
+
+    protected override bool AdmiteEstados => false;
 }

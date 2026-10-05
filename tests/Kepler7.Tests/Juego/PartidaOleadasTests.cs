@@ -2,6 +2,7 @@ using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
 using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
+using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
@@ -465,5 +466,88 @@ public class PartidaOleadasTests
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Strategy));
         Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.Strategy));
+    }
+
+    [TestMethod]
+    public void CadaOleadaEmpiezaConElEscuadronEnEstadoNormal()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        _partida.Escuadron[0].CambiarEstado(new Envenenado());
+
+        _partida.EmpezarOleada();
+
+        Assert.IsTrue(_partida.Escuadron.All(u => u.Estado is Normal));
+    }
+
+    [TestMethod]
+    public void SinArmasEnvenenadasElEscuadronNoEnvenena()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        var medico = _partida.Escuadron.First(u => u.Clase == ClaseUnidad.Medico);
+        var objetivo = oleada.ObjetivosDeAtaque(medico)[0];
+
+        oleada.Atacar(medico, objetivo);
+
+        Assert.IsInstanceOfType<Normal>(objetivo.Estado);
+    }
+
+    [TestMethod]
+    public void LasArmasEnvenenadasDelAlmacenEnvenenanAlEnemigo()
+    {
+        _partida.AnalizarAlmacen(new AplicadorVeneno());
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        var medico = _partida.Escuadron.First(u => u.Clase == ClaseUnidad.Medico);
+        var objetivo = oleada.ObjetivosDeAtaque(medico)[0];
+
+        oleada.Atacar(medico, objetivo);
+
+        Assert.IsInstanceOfType<Envenenado>(objetivo.Estado);
+    }
+
+    [TestMethod]
+    public void SiSeVendenLasArmasEnvenenadasElEscuadronDejaDeEnvenenar()
+    {
+        _partida.AnalizarAlmacen(new AplicadorVeneno());
+        _partida.VenderAlmacen();
+        _partida.ControlCentral.IniciarTurno();
+
+        _partida.EmpezarOleada();
+
+        Assert.IsTrue(_partida.Escuadron.All(u => u.EfectoAlGolpear == EfectoGolpe.Ninguno));
+    }
+
+    [TestMethod]
+    public void GanarConUnaUnidadQueCambioDeEstadoDaLaInsigniaDeState()
+    {
+        // Sin capas, para que los golpes del Enjambre lleguen a la vida.
+        foreach (var capa in _partida.Armeria.Capas.ToList())
+            _partida.Armeria.Quitar(capa);
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+        var soldado = _partida.Escuadron.First(u => u.Clase == ClaseUnidad.Soldado);
+        soldado.PerderVida(soldado.Vida - 10);
+
+        oleada.TerminarTurno();
+        oleada.JugarTurnoEnjambre();
+        Assert.IsInstanceOfType<Berserk>(soldado.Estado);
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.State));
+
+        GanarRapido(oleada);
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.State));
+        Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.State));
+    }
+
+    [TestMethod]
+    public void GanarSinCambiosDeEstadoNoDaLaInsigniaDeState()
+    {
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+
+        GanarRapido(oleada);
+
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.State));
     }
 }

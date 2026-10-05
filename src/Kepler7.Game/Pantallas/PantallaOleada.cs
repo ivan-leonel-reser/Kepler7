@@ -1,6 +1,7 @@
 using Kepler7.BE;
 using Kepler7.Core.Combate;
 using Kepler7.Core.Juego;
+using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.TemplateMethod;
 using Kepler7.Game.Controles;
@@ -393,17 +394,24 @@ internal class PantallaOleada : Pantalla
         if (_pendiente == AccionPendiente.Hackear && _nuevaIA.SelectedItem is IEstrategiaIA ia)
             return $"Hackeo con IA {ia.Nombre}. {ia.Descripcion} Elegí un enemigo (en amarillo); no se puede deshacer.";
         if (actor is null)
-            return _oleada.Escuadron.Any(_oleada.PuedeActuar)
+        {
+            var sinTurno = _oleada.Escuadron.Where(u => !u.Estado.PuedeActuar)
+                .Select(u => $" {u.Nombre} está {u.Estado.Nombre.ToLowerInvariant()}: {u.Estado.Efecto}.");
+            var aviso = _oleada.Escuadron.Any(_oleada.PuedeActuar)
                 ? "Elegí una unidad de tu escuadrón."
-                : "Ya actuaron todos. Terminá el turno o deshacé una acción.";
+                : "No queda nadie por actuar. Terminá el turno o deshacé una acción.";
+            return aviso + string.Concat(sinTurno);
+        }
 
+        // Si la unidad no está normal, se avisa en qué estado quedó y qué le cambia.
+        var estado = actor.Estado is Normal ? "" : $" Está {actor.Estado.Nombre.ToLowerInvariant()}: {actor.Estado.Efecto}.";
         return _pendiente switch
         {
             AccionPendiente.Atacar => $"{actor.Nombre}: elegí a qué enemigo atacar (en amarillo).",
             AccionPendiente.Curar => $"{actor.Nombre}: elegí a quién curar (en amarillo).",
             _ when !actor.PuedeAtacar && !actor.AtacaADistancia =>
-                $"{actor.Nombre} ({actor.Clase}) está atrás: cuerpo a cuerpo solo ataca desde adelante.",
-            _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción. {TurnoUnidad.Para(actor, _oleada.Campo).Habilidad}",
+                $"{actor.Nombre} ({actor.Clase}) está atrás: cuerpo a cuerpo solo ataca desde adelante.{estado}",
+            _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción. {TurnoUnidad.Para(actor, _oleada.Campo).Habilidad}{estado}",
         };
     }
 
