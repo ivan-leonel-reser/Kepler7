@@ -3,6 +3,7 @@ using Kepler7.Core.Combate;
 using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
+using Kepler7.Core.Patrones.Creacionales.Prototype;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Patrones.Estructurales.Flyweight;
 using Kepler7.Core.Progreso;
@@ -16,12 +17,16 @@ public class Partida
     public const int XpPorInsignia = 50;
     public const int CreditosPorInsignia = 100;
     public const int CostoRecluta = 50;
+    public const int CostoClon = 80;
 
     private readonly IRepositorioProgreso _repositorio;
     private readonly IngenieroJefe _ingeniero = new();
     private readonly HashSet<string> _recetasUsadas = [];
     private readonly HashSet<string> _analizadoresUsados = [];
+    private readonly Dictionary<UnidadEscuadron, FichaSoldado> _fichas = [];
     private UnidadEscuadron? _unidadRecluta;
+    private UnidadEscuadron? _unidadClon;
+    private bool _clonModificado;
 
     public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio)
     {
@@ -54,6 +59,14 @@ public class Partida
     public Tripulante? Recluta { get; private set; }
 
     public bool PuedeReclutar => !Terminada && Progreso.Creditos >= CostoRecluta;
+
+    /// <summary>La ficha del clon que salió del Laboratorio y está en el escuadrón. Hay lugar para uno solo.</summary>
+    public FichaSoldado? Clon { get; private set; }
+
+    public bool PuedeClonar => !Terminada && Progreso.Creditos >= CostoClon;
+
+    /// <summary>A quiénes se puede clonar: todo el escuadrón menos el propio clon.</summary>
+    public IReadOnlyList<UnidadEscuadron> Clonables => Escuadron.Where(u => u != _unidadClon).ToList();
 
     /// <summary>La partida se perdió: ya no se guarda más.</summary>
     public bool Terminada { get; private set; }
@@ -126,6 +139,45 @@ public class Partida
             TipoEntrada.Exito);
         Guardar();
         return _unidadRecluta;
+    }
+
+    /// <summary>La ficha de una unidad del escuadrón, que es el original del que se sacan los clones.</summary>
+    public FichaSoldado FichaDe(UnidadEscuadron unidad)
+    {
+        if (!_fichas.TryGetValue(unidad, out var ficha))
+        {
+            var especie = unidad == _unidadRecluta ? Recluta?.Especie : null;
+            ficha = new FichaSoldado(unidad.Nombre, unidad.Clase, especie);
+            _fichas[unidad] = ficha;
+        }
+        return ficha;
+    }
+
+    /// <summary>
+    /// Suma al escuadrón la unidad que sale de la ficha del clon. Si ya había un clon, el nuevo lo reemplaza.
+    /// </summary>
+    public UnidadEscuadron SumarClon(FichaSoldado original, FichaSoldado clon)
+    {
+        if (ReferenceEquals(original, clon))
+            throw new ArgumentException("El clon tiene que ser una copia, no el mismo original.", nameof(clon));
+        if (!PuedeClonar)
+            throw new InvalidOperationException($"Sumar un clon cuesta {CostoClon} créditos.");
+
+        Progreso.GastarCreditos(CostoClon);
+        if (_unidadClon is not null)
+            Escuadron.Remove(_unidadClon);
+
+        _unidadClon = clon.CrearUnidad();
+        _fichas[_unidadClon] = clon;
+        Escuadron.Add(_unidadClon);
+        Clon = clon;
+        _clonModificado |= !clon.Habilidades.SequenceEqual(original.Habilidades);
+
+        Bitacora.Registrar("Laboratorio",
+            $"{clon.Nombre}, clon de {original.Nombre}, se suma al escuadrón con {clon.Habilidades.Count} habilidades.",
+            TipoEntrada.Exito);
+        Guardar();
+        return _unidadClon;
     }
 
     /// <summary>Pasea por todo el Almacén al analizador que eligió el jugador.</summary>
@@ -231,6 +283,9 @@ public class Partida
 
         if (Recluta is not null)
             Sumar(nuevas, OtorgarInsignia(Patron.Flyweight));
+
+        if (_clonModificado)
+            Sumar(nuevas, OtorgarInsignia(Patron.Prototype));
 
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));

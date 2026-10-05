@@ -18,7 +18,7 @@ internal static class ModulosEstacion
     [
         new("Hangar", Patron.Builder, "Armá la nave de apoyo para la próxima oleada.", p => new PantallaHangar(p)),
         new("Censo", Patron.Flyweight, "Reclutá tripulantes entre los 10.000 de la estación.", p => new PantallaCenso(p)),
-        new("Laboratorio", Patron.Prototype, "Cloná a un soldado para sumarlo al escuadrón.", null),
+        new("Laboratorio", Patron.Prototype, "Cloná a un soldado para sumarlo al escuadrón.", p => new PantallaLaboratorio(p)),
         new("Comunicaciones", Patron.Bridge, "Pedí refuerzos a la Tierra con el cifrado que elijas.", null),
         new("Bóveda", Patron.Proxy, "Leé el informe secreto sobre la próxima oleada.", null),
         new("Almacén", Patron.Visitor, "Revisá y vendé el botín de las oleadas.", p => new PantallaAlmacen(p)),
