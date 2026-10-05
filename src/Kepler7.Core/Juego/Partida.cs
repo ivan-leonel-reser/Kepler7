@@ -4,6 +4,7 @@ using Kepler7.Core.Patrones.Comportamiento.ChainOfResponsibility;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Estructurales.Facade;
+using Kepler7.Core.Patrones.Estructurales.Flyweight;
 using Kepler7.Core.Progreso;
 using Kepler7.Services;
 
@@ -14,11 +15,13 @@ public class Partida
 {
     public const int XpPorInsignia = 50;
     public const int CreditosPorInsignia = 100;
+    public const int CostoRecluta = 50;
 
     private readonly IRepositorioProgreso _repositorio;
     private readonly IngenieroJefe _ingeniero = new();
     private readonly HashSet<string> _recetasUsadas = [];
     private readonly HashSet<string> _analizadoresUsados = [];
+    private UnidadEscuadron? _unidadRecluta;
 
     public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio)
     {
@@ -43,6 +46,14 @@ public class Partida
 
     /// <summary>La nave que espera en el Hangar para la próxima oleada. Hay lugar para una sola.</summary>
     public Nave? NaveDeApoyo { get; private set; }
+
+    /// <summary>El padrón de la estación, de donde se recluta.</summary>
+    public Censo Censo { get; } = new();
+
+    /// <summary>El tripulante del censo que está sirviendo en el escuadrón. Hay lugar para uno solo.</summary>
+    public Tripulante? Recluta { get; private set; }
+
+    public bool PuedeReclutar => !Terminada && Progreso.Creditos >= CostoRecluta;
 
     /// <summary>La partida se perdió: ya no se guarda más.</summary>
     public bool Terminada { get; private set; }
@@ -87,6 +98,34 @@ public class Partida
         _recetasUsadas.Add(receta.Nombre);
         Bitacora.Registrar("Hangar", $"Nave {nave.Modelo} lista para la próxima oleada: {nave.Apoyo}.", TipoEntrada.Exito);
         return nave;
+    }
+
+    /// <summary>Arma el padrón la primera vez que se lo consulta. Son 10.000 tripulantes: la interfaz lo pide fuera del hilo de la ventana.</summary>
+    public void GenerarCenso() => Censo.Generar(Aleatorio);
+
+    /// <summary>
+    /// Suma al escuadrón a un tripulante del censo, como soldado y con el bonus de su especie.
+    /// Si ya había un recluta, el nuevo lo reemplaza.
+    /// </summary>
+    public UnidadEscuadron Reclutar(Tripulante tripulante)
+    {
+        if (!PuedeReclutar)
+            throw new InvalidOperationException($"Reclutar cuesta {CostoRecluta} créditos.");
+
+        Progreso.GastarCreditos(CostoRecluta);
+        if (_unidadRecluta is not null)
+            Escuadron.Remove(_unidadRecluta);
+
+        var especie = tripulante.Especie;
+        _unidadRecluta = UnidadEscuadron.Crear(tripulante.Nombre, ClaseUnidad.Soldado, especie.BonusVida, especie.BonusAtaque);
+        Escuadron.Add(_unidadRecluta);
+        Recluta = tripulante;
+
+        Bitacora.Registrar("Censo",
+            $"{tripulante.Nombre} ({especie.Nombre}) se suma al escuadrón como soldado: +{especie.BonusVida} de vida y +{especie.BonusAtaque} de ataque por su especie.",
+            TipoEntrada.Exito);
+        Guardar();
+        return _unidadRecluta;
     }
 
     /// <summary>Pasea por todo el Almacén al analizador que eligió el jugador.</summary>
@@ -189,6 +228,9 @@ public class Partida
 
         if (_recetasUsadas.Count == CatalogoRecetas.Crear().Count)
             Sumar(nuevas, OtorgarInsignia(Patron.Builder));
+
+        if (Recluta is not null)
+            Sumar(nuevas, OtorgarInsignia(Patron.Flyweight));
 
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));

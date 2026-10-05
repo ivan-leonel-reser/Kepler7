@@ -287,6 +287,75 @@ public class PartidaOleadasTests
     }
 
     [TestMethod]
+    public void ReclutarSumaUnSoldadoConElBonusDeSuEspecie()
+    {
+        _partida.Progreso.GanarCreditos(Partida.CostoRecluta);
+        _partida.GenerarCenso();
+        var abisal = _partida.Censo.Tripulantes.First(t => t.Especie.Nombre == "Abisal");
+        var soldadoBase = UnidadEscuadron.Crear("Base", ClaseUnidad.Soldado);
+
+        var recluta = _partida.Reclutar(abisal);
+
+        Assert.HasCount(5, _partida.Escuadron);
+        Assert.AreEqual(abisal.Nombre, recluta.Nombre);
+        Assert.AreEqual(ClaseUnidad.Soldado, recluta.Clase);
+        Assert.AreEqual(soldadoBase.VidaMaxima + abisal.Especie.BonusVida, recluta.VidaMaxima);
+        Assert.AreEqual(soldadoBase.Ataque + abisal.Especie.BonusAtaque, recluta.Ataque);
+        Assert.AreSame(abisal, _partida.Recluta);
+        Assert.AreEqual(0, _partida.Progreso.Creditos);
+    }
+
+    [TestMethod]
+    public void SinCreditosNoSePuedeReclutar()
+    {
+        _partida.GenerarCenso();
+
+        Assert.IsFalse(_partida.PuedeReclutar);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _partida.Reclutar(_partida.Censo.Tripulantes[0]));
+        Assert.HasCount(4, _partida.Escuadron);
+    }
+
+    [TestMethod]
+    public void UnReclutaNuevoReemplazaAlAnterior()
+    {
+        _partida.Progreso.GanarCreditos(2 * Partida.CostoRecluta);
+        _partida.GenerarCenso();
+        var primero = _partida.Reclutar(_partida.Censo.Tripulantes[0]);
+
+        var segundo = _partida.Reclutar(_partida.Censo.Tripulantes[1]);
+
+        Assert.HasCount(5, _partida.Escuadron);
+        Assert.DoesNotContain(primero, _partida.Escuadron);
+        Assert.Contains(segundo, _partida.Escuadron);
+    }
+
+    [TestMethod]
+    public void ElReclutaSaleAPelearConElEscuadron()
+    {
+        _partida.Progreso.GanarCreditos(Partida.CostoRecluta);
+        _partida.GenerarCenso();
+        var recluta = _partida.Reclutar(_partida.Censo.Tripulantes[0]);
+        _partida.ControlCentral.IniciarTurno();
+
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.Contains(recluta, oleada.Escuadron.ToList());
+        Assert.IsTrue(oleada.PuedeActuar(recluta));
+    }
+
+    [TestMethod]
+    public void ReclutarDaLaInsigniaDeFlyweight()
+    {
+        _partida.Progreso.GanarCreditos(Partida.CostoRecluta);
+        _partida.GenerarCenso();
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Flyweight));
+
+        _partida.Reclutar(_partida.Censo.Tripulantes[0]);
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Flyweight));
+    }
+
+    [TestMethod]
     public void JugarConLasCuatroClasesDaLaInsigniaDeTemplateMethod()
     {
         _partida.ControlCentral.IniciarTurno();
