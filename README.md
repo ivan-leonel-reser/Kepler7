@@ -10,7 +10,7 @@ Videojuego táctico por turnos en C# Windows Forms. Trabajo Práctico Final - *K
 
 - Windows 10/11
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (o superior) para compilar - para solo jugar alcanza con el *.NET 8 Desktop Runtime*
-- SQL Server LocalDB o Express *(a partir de la Fase 3)*
+- SQL Server LocalDB (viene con Visual Studio) o SQL Server Express, para guardar el progreso
 
 ## Compilar y ejecutar
 
@@ -19,6 +19,21 @@ dotnet build Kepler7.sln
 dotnet test
 dotnet run --project src/Kepler7.Game
 ```
+
+## Persistencia
+
+El progreso (XP, créditos, oleadas superadas e insignias) y el registro de accesos de la Bóveda se guardan en SQL Server con seguridad integrada.
+
+1. La cadena de conexión está en `appsettings.json`, al lado del ejecutable (en el código, `src/Kepler7.Game/appsettings.json`). Por defecto apunta a `(localdb)\MSSQLLocalDB`. Para SQL Server Express cambiarla por `Server=.\SQLEXPRESS;Database=Kepler7;Integrated Security=true;TrustServerCertificate=true`.
+2. Al arrancar, el juego crea la base `Kepler7` y sus tablas si no existen, con el script `db/01_crear_base.sql`. El mismo script se puede correr a mano:
+
+```bash
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -i db/01_crear_base.sql
+```
+
+Si no se puede conectar, el juego lo avisa en la pantalla de inicio y sigue funcionando con el progreso en memoria, que se pierde al cerrar.
+
+Las pruebas de la capa de datos usan una base aparte, `Kepler7_Pruebas`, y quedan como no concluyentes si no hay SQL Server. La cadena se puede cambiar con la variable de entorno `KEPLER7_SQL_PRUEBAS`.
 
 ## Estructura
 
