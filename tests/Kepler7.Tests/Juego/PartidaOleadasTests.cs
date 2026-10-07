@@ -229,12 +229,11 @@ public class PartidaOleadasTests
         var oleada = _partida.EmpezarOleada();
         Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.ChainOfResponsibility));
 
-        // Los Zánganos de la oleada 1 pegan de a 2: el bloqueo los para enteros.
+        // Los Zánganos de la oleada 1 pegan de a 5: entre la armadura y el escudo, el primer golpe se frena entero.
         oleada.TerminarTurno();
         oleada.JugarTurnoEnjambre();
 
         Assert.IsGreaterThan(0, oleada.GolpesAbsorbidos);
-        Assert.IsTrue(_partida.Escuadron.All(u => u.Vida == u.VidaMaxima));
         Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen.StartsWith("Defensas") && e.Mensaje.Contains("no pierde vida")));
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.ChainOfResponsibility));
     }
@@ -528,8 +527,9 @@ public class PartidaOleadasTests
             _partida.Armeria.Quitar(capa);
         _partida.ControlCentral.IniciarTurno();
         var oleada = _partida.EmpezarOleada();
+        // Con 14 de vida, el primer zángano lo deja por debajo de un tercio y el segundo no llega a derribarlo.
         var soldado = _partida.Escuadron.First(u => u.Clase == ClaseUnidad.Soldado);
-        soldado.PerderVida(soldado.Vida - 10);
+        soldado.PerderVida(soldado.Vida - 14);
 
         oleada.TerminarTurno();
         oleada.JugarTurnoEnjambre();
