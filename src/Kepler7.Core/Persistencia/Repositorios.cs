@@ -11,4 +11,9 @@ public static class Repositorios
 {
     // Mientras no esté SQL Server, el progreso se guarda solo mientras el juego está abierto.
     public static IRepositorioProgreso CrearProgreso() => new RepositorioProgresoEnMemoria();
+
+    // El registro de la bóveda es uno solo para toda la estación, dure lo que dure el juego abierto.
+    private static readonly IRegistroAccesos RegistroAccesos = new RegistroAccesosEnMemoria();
+
+    public static IRegistroAccesos CrearRegistroAccesos() => RegistroAccesos;
 }
