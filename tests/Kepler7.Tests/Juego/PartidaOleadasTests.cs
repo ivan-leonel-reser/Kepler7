@@ -8,6 +8,7 @@ using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Creacionales.Prototype;
 using Kepler7.Core.Patrones.Estructurales.Facade;
+using Kepler7.Core.Patrones.Estructurales.Proxy;
 using Kepler7.Tests.Dobles;
 
 namespace Kepler7.Tests.Juego;
@@ -538,6 +539,72 @@ public class PartidaOleadasTests
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.State));
         Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.State));
+    }
+
+    [TestMethod]
+    public void LeerElInformeDeLaProximaOleadaRevelaLaIADeLosEnemigos()
+    {
+        _partida.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.Capitan);
+        var informe = _partida.LeerArchivoBoveda(CatalogoBoveda.InformeOleada(1));
+        Assert.Contains("Zángano", informe);
+        Assert.IsTrue(_partida.InformeLeido);
+
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.IsTrue(oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().All(e => e.IARevelada));
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Bóveda"));
+    }
+
+    [TestMethod]
+    public void SinLeerElInformeLaIAQuedaOculta()
+    {
+        _partida.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.Capitan);
+        _partida.LeerArchivoBoveda(CatalogoBoveda.InformeOleada(2));
+        Assert.IsFalse(_partida.InformeLeido);
+
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.IsFalse(oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>().Any(e => e.IARevelada));
+    }
+
+    [TestMethod]
+    public void UnAccesoDenegadoQuedaRegistradoYEnLaBitacora()
+    {
+        _partida.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.Cadete);
+
+        Assert.ThrowsExactly<AccesoDenegadoException>(() => _partida.LeerArchivoBoveda(CatalogoBoveda.InformeOleada(1)));
+
+        Assert.HasCount(1, _partida.Boveda.IntentosDenegados);
+        Assert.IsTrue(_partida.Bitacora.Entradas.Any(e => e.Origen == "Bóveda" && e.Tipo == TipoEntrada.Peligro));
+        Assert.IsFalse(_partida.InformeLeido);
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Proxy));
+    }
+
+    [TestMethod]
+    public void EntrarConUnRolAutorizadoDaLaInsigniaDeProxy()
+    {
+        _partida.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.OficialDeSeguridad);
+
+        _partida.EscribirArchivoBoveda(CatalogoBoveda.DiarioDelCapitan, "Oleada 1 sin novedades.");
+
+        Assert.AreEqual("Oleada 1 sin novedades.", _partida.LeerArchivoBoveda(CatalogoBoveda.DiarioDelCapitan));
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Proxy));
+        Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.Proxy));
+    }
+
+    [TestMethod]
+    public void ElRegistroDeLaBovedaSobreviveALaPartida()
+    {
+        var registro = new RegistroAccesosFalso();
+        var primera = Partida.Nueva(_repositorio, new AleatorioFijo(), registro);
+        primera.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.Soldado);
+        Assert.ThrowsExactly<AccesoDenegadoException>(() => primera.LeerArchivoBoveda(CatalogoBoveda.DiarioDelCapitan));
+
+        var segunda = Partida.Nueva(_repositorio, new AleatorioFijo(), registro);
+
+        Assert.HasCount(1, segunda.Boveda.IntentosDenegados);
     }
 
     [TestMethod]

@@ -7,6 +7,8 @@ using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Creacionales.Prototype;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Patrones.Estructurales.Flyweight;
+using Kepler7.Core.Patrones.Estructurales.Proxy;
+using Kepler7.Core.Persistencia;
 using Kepler7.Core.Progreso;
 using Kepler7.Services;
 
@@ -25,16 +27,18 @@ public class Partida
     private readonly HashSet<string> _recetasUsadas = [];
     private readonly HashSet<string> _analizadoresUsados = [];
     private readonly Dictionary<UnidadEscuadron, FichaSoldado> _fichas = [];
+    private readonly HashSet<int> _informesLeidos = [];
     private UnidadEscuadron? _unidadRecluta;
     private UnidadEscuadron? _unidadClon;
     private bool _clonModificado;
 
-    public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio)
+    public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
     {
         _repositorio = repositorio;
         Progreso = progreso;
         Aleatorio = aleatorio;
         ControlCentral = new ControlCentral(Bitacora);
+        Boveda = new ProxyBoveda(CatalogoBoveda.CrearBoveda, registroAccesos ?? Repositorios.CrearRegistroAccesos());
     }
 
     public ProgresoJugador Progreso { get; }
@@ -66,6 +70,12 @@ public class Partida
 
     public bool PuedeClonar => !Terminada && Progreso.Creditos >= CostoClon;
 
+    /// <summary>La bóveda de datos, siempre detrás de su proxy. La interfaz nunca toca la bóveda real.</summary>
+    public ProxyBoveda Boveda { get; }
+
+    /// <summary>Si ya se leyó el informe de la próxima oleada: al empezarla, la IA de cada enemigo se ve desde el primer turno.</summary>
+    public bool InformeLeido => _informesLeidos.Contains(NumeroProximaOleada);
+
     /// <summary>A quiénes se puede clonar: todo el escuadrón menos el propio clon.</summary>
     public IReadOnlyList<UnidadEscuadron> Clonables => Escuadron.Where(u => u != _unidadClon).ToList();
 
@@ -77,22 +87,22 @@ public class Partida
     public bool PuedeDefender =>
         !Terminada && !Progreso.EstacionSalvada && ControlCentral.Modo == ModoEstacion.Operativa;
 
-    public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio)
+    public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
     {
         repositorio.Borrar();
-        var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio);
+        var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio, registroAccesos);
         partida.Bitacora.Registrar("Consejo", "El Enjambre va a atacar Kepler-7 en 6 oleadas. Prepará al escuadrón y defendé la estación.", TipoEntrada.Advertencia);
         partida.AvisarEstacionApagada();
         partida.Guardar();
         return partida;
     }
 
-    public static Partida Continuar(IRepositorioProgreso repositorio, IAleatorio aleatorio)
+    public static Partida Continuar(IRepositorioProgreso repositorio, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
     {
         var progreso = repositorio.Cargar()
             ?? throw new InvalidOperationException("No hay una partida guardada.");
 
-        var partida = new Partida(repositorio, progreso, aleatorio);
+        var partida = new Partida(repositorio, progreso, aleatorio, registroAccesos);
         partida.Bitacora.Registrar("Consejo", $"Bienvenido de nuevo, Comandante. Oleadas superadas: {progreso.OleadasSuperadas} de {ProgresoJugador.OleadasTotales}.");
         partida.AvisarEstacionApagada();
         return partida;
@@ -181,6 +191,38 @@ public class Partida
         return _unidadClon;
     }
 
+    /// <summary>
+    /// Lee un archivo de la bóveda con la credencial que tenga puesta el proxy. Si el proxy lo rechaza,
+    /// el intento ya quedó registrado y la excepción llega a la interfaz para que lo muestre.
+    /// Leer el informe de la próxima oleada hace que sus enemigos salgan con la IA a la vista.
+    /// </summary>
+    public string LeerArchivoBoveda(string id)
+    {
+        var contenido = Operar(() => Boveda.LeerArchivo(id), ProxyBoveda.OperacionLeer, id);
+        if (CatalogoBoveda.OleadaDelInforme(id) is { } oleada && _informesLeidos.Add(oleada) && oleada == NumeroProximaOleada)
+            Bitacora.Registrar("Bóveda", $"El informe de la oleada {oleada} revela la IA de cada enemigo: va a verse desde el primer turno.", TipoEntrada.Exito);
+        return contenido;
+    }
+
+    public void EscribirArchivoBoveda(string id, string contenido) =>
+        Operar(() => { Boveda.EscribirArchivo(id, contenido); return contenido; }, ProxyBoveda.OperacionEscribir, id);
+
+    private string Operar(Func<string> operacion, string nombre, string id)
+    {
+        var quien = Boveda.Credencial?.ToString() ?? "alguien sin credencial";
+        try
+        {
+            var resultado = operacion();
+            Bitacora.Registrar("Bóveda", $"{quien} pudo {nombre.ToLowerInvariant()} el archivo '{id}'.", TipoEntrada.Exito);
+            return resultado;
+        }
+        catch (AccesoDenegadoException)
+        {
+            Bitacora.Registrar("Bóveda", $"Acceso denegado: {quien} intentó {nombre.ToLowerInvariant()} '{id}'. Quedó en el registro.", TipoEntrada.Peligro);
+            throw;
+        }
+    }
+
     /// <summary>Pasea por todo el Almacén al analizador que eligió el jugador.</summary>
     public void AnalizarAlmacen(IVisitor visitante)
     {
@@ -234,6 +276,12 @@ public class Partida
         }
         if (armasEnvenenadas)
             oleada.Bitacora.Registrar("Almacén", "El escuadrón lleva armas envenenadas: cada golpe que saque vida envenena al enemigo.", TipoEntrada.Exito);
+        if (InformeLeido)
+        {
+            foreach (var enemigo in oleada.Campo.UnidadesVivasDe(Bando.Enjambre).OfType<Enemigo>())
+                enemigo.IARevelada = true;
+            oleada.Bitacora.Registrar("Bóveda", "Gracias al informe de la bóveda, la IA de cada enemigo está a la vista.", TipoEntrada.Exito);
+        }
         var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).Count();
         oleada.Bitacora.Registrar("Oleada", $"Oleada {numero} de {ProgresoJugador.OleadasTotales}: {enemigos} enemigos. Le toca al escuadrón.", TipoEntrada.Peligro);
 
@@ -293,6 +341,9 @@ public class Partida
 
         if (_clonModificado)
             Sumar(nuevas, OtorgarInsignia(Patron.Prototype));
+
+        if (Boveda.AccesosConcedidos > 0)
+            Sumar(nuevas, OtorgarInsignia(Patron.Proxy));
 
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));
