@@ -221,6 +221,20 @@ public class OleadaTests
     }
 
     [TestMethod]
+    public void ElRefuerzoDeLaTierraSumaBarricadasSoloAntesDeEmpezar()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+
+        oleada.RecibirRefuerzo(2);
+        Assert.AreEqual(Oleada.BarricadasPorOleada + 2, oleada.BarricadasDisponibles);
+
+        oleada.Construir(_soldado);
+        Assert.AreEqual(Oleada.BarricadasPorOleada + 1, oleada.BarricadasDisponibles);
+        Assert.ThrowsExactly<InvalidOperationException>(() => oleada.RecibirRefuerzo(1));
+    }
+
+    [TestMethod]
     public void UnaUnidadAturdidaPierdeSuTurnoYDespuesVuelveAJugar()
     {
         var coloso = new Enemigo("Coloso", 40, 5) { EfectoAlGolpear = EfectoGolpe.Aturdimiento };

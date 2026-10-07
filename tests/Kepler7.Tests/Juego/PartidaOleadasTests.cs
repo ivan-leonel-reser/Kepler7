@@ -7,6 +7,7 @@ using Kepler7.Core.Patrones.Comportamiento.Strategy;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Creacionales.Prototype;
+using Kepler7.Core.Patrones.Estructurales.Bridge;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Patrones.Estructurales.Proxy;
 using Kepler7.Tests.Dobles;
@@ -605,6 +606,107 @@ public class PartidaOleadasTests
         var segunda = Partida.Nueva(_repositorio, new AleatorioFijo(), registro);
 
         Assert.HasCount(1, segunda.Boveda.IntentosDenegados);
+    }
+
+    [TestMethod]
+    public void TransmitirCobraElCifradoYLaTierraResponde()
+    {
+        _partida.Progreso.GanarCreditos(100);
+
+        var transmision = _partida.Transmitir(new MensajeTexto("Kepler-7 operativa.", new CifradoAES()));
+
+        Assert.AreEqual("AES", transmision.Cifrado);
+        Assert.IsFalse(transmision.Interceptada);
+        Assert.AreEqual(100 - 30 + MensajeTexto.CreditosDeSuministros, _partida.Progreso.Creditos);
+        Assert.IsFalse(_partida.AntenaDisponible);
+        Assert.AreSame(transmision, _partida.UltimaTransmision);
+        Assert.IsTrue(_partida.Bitacora.Entradas.Any(e => e.Origen == "Comunicaciones" && e.Tipo == TipoEntrada.Exito));
+    }
+
+    [TestMethod]
+    public void LaAntenaMandaUnMensajePorOleada()
+    {
+        var mensaje = new MensajeTexto("Primer parte.", new SinCifrado());
+        _partida.Transmitir(mensaje);
+
+        Assert.IsFalse(_partida.PuedeTransmitir(mensaje));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _partida.Transmitir(mensaje));
+
+        _partida.ControlCentral.IniciarTurno();
+        _partida.EmpezarOleada();
+        Assert.IsTrue(_partida.AntenaDisponible);
+    }
+
+    [TestMethod]
+    public void SinCreditosNoSePuedeTransmitirConCifrado()
+    {
+        var mensaje = new MensajeAlerta("Enjambre a la vista.", new CifradoCuantico());
+
+        Assert.IsFalse(_partida.PuedeTransmitir(mensaje));
+        Assert.ThrowsExactly<InvalidOperationException>(() => _partida.Transmitir(mensaje));
+        Assert.IsTrue(_partida.AntenaDisponible);
+    }
+
+    [TestMethod]
+    public void UnaAlertaSumaBarricadasALaProximaOleada()
+    {
+        _partida.Transmitir(new MensajeAlerta("Enjambre a la vista.", new SinCifrado()));
+        Assert.AreEqual(MensajeAlerta.BarricadasDeRefuerzo, _partida.BarricadasDeRefuerzo);
+
+        _partida.ControlCentral.IniciarTurno();
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.AreEqual(Oleada.BarricadasPorOleada + MensajeAlerta.BarricadasDeRefuerzo, oleada.BarricadasDisponibles);
+        Assert.AreEqual(0, _partida.BarricadasDeRefuerzo);
+    }
+
+    [TestMethod]
+    public void SinCifradoElEnjambrePuedeInterceptarYLaOleadaVieneConUnZanganoMas()
+    {
+        var partida = Partida.Nueva(_repositorio, new AleatorioFijo { ProbabilidadFija = true });
+
+        var transmision = partida.Transmitir(new MensajeTexto("Kepler-7 operativa.", new SinCifrado()));
+        partida.ControlCentral.IniciarTurno();
+        var oleada = partida.EmpezarOleada();
+
+        Assert.IsTrue(transmision.Interceptada);
+        var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).ToList();
+        Assert.HasCount(GeneradorOleadas.Crear(1).Count + 1, enemigos);
+        Assert.IsTrue(enemigos.Any(e => e.Nombre.Contains("interceptor")));
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Comunicaciones" && e.Tipo == TipoEntrada.Peligro));
+    }
+
+    [TestMethod]
+    public void ConCifradoElEnjambreNoIntercepta()
+    {
+        var partida = Partida.Nueva(_repositorio, new AleatorioFijo { ProbabilidadFija = true });
+        partida.Progreso.GanarCreditos(30);
+
+        var transmision = partida.Transmitir(new MensajeTexto("Kepler-7 operativa.", new CifradoAES()));
+        partida.ControlCentral.IniciarTurno();
+        var oleada = partida.EmpezarOleada();
+
+        Assert.IsFalse(transmision.Interceptada);
+        Assert.HasCount(GeneradorOleadas.Crear(1).Count, oleada.Campo.UnidadesVivasDe(Bando.Enjambre).ToList());
+    }
+
+    [TestMethod]
+    public void UsarLosTresCifradosDaLaInsigniaDeBridge()
+    {
+        _partida.Progreso.GanarCreditos(100);
+        foreach (var cifrado in CatalogoComunicaciones.Cifrados.Take(2))
+        {
+            _partida.Transmitir(new MensajeTexto("Parte.", cifrado));
+            _partida.ControlCentral.IniciarTurno();
+            GanarRapido(_partida.EmpezarOleada());
+            _partida.CerrarOleada();
+        }
+        Assert.IsFalse(_partida.RevisarLogros().Any(i => i.Patron == Patron.Bridge));
+
+        _partida.Transmitir(new MensajeTexto("Parte.", CatalogoComunicaciones.Cifrados[2]));
+
+        Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Bridge));
+        Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.Bridge));
     }
 
     [TestMethod]
