@@ -10,6 +10,7 @@ using Kepler7.Core.Patrones.Creacionales.Prototype;
 using Kepler7.Core.Patrones.Estructurales.Bridge;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Patrones.Estructurales.Proxy;
+using Kepler7.Core.Progreso;
 using Kepler7.Tests.Dobles;
 
 namespace Kepler7.Tests.Juego;
@@ -707,6 +708,76 @@ public class PartidaOleadasTests
 
         Assert.IsTrue(_partida.RevisarLogros().Any(i => i.Patron == Patron.Bridge));
         Assert.IsTrue(_partida.Progreso.TieneInsignia(Patron.Bridge));
+    }
+
+    [TestMethod]
+    public void SubirDeNivelAmpliaLosLimitesDeLaOleada()
+    {
+        _partida.Progreso.GanarXp(ProgresoJugador.XpPorNivel * 2);
+        Assert.AreEqual(3, _partida.Progreso.Nivel);
+        _partida.ControlCentral.IniciarTurno();
+
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.AreEqual(Oleada.HackeosPorOleada + 1, oleada.HackeosDisponibles);
+        Assert.AreEqual(Oleada.BarricadasPorOleada + 1, oleada.BarricadasDisponibles);
+        Assert.IsTrue(oleada.Bitacora.Entradas.Any(e => e.Origen == "Progreso" && e.Mensaje.Contains("nivel 3")));
+    }
+
+    [TestMethod]
+    public void EnNivelUnoNoHayVentajas()
+    {
+        _partida.ControlCentral.IniciarTurno();
+
+        var oleada = _partida.EmpezarOleada();
+
+        Assert.AreEqual(Oleada.HackeosPorOleada, oleada.HackeosDisponibles);
+        Assert.AreEqual(Oleada.BarricadasPorOleada, oleada.BarricadasDisponibles);
+        Assert.IsFalse(oleada.Bitacora.Entradas.Any(e => e.Origen == "Progreso"));
+    }
+
+    [TestMethod]
+    public void ElNivelCuatroSumaCreditosPorOleada()
+    {
+        _partida.Progreso.GanarXp(ProgresoJugador.XpPorNivel * 3);
+        _partida.ControlCentral.IniciarTurno();
+        GanarRapido(_partida.EmpezarOleada());
+
+        var resultado = _partida.CerrarOleada();
+
+        Assert.AreEqual(50 + 25 + Desbloqueos.CreditosExtraPorOleada(4), resultado.Creditos);
+    }
+
+    [TestMethod]
+    public void AlSubirDeNivelLaBitacoraCuentaQueSeDesbloqueo()
+    {
+        _partida.Progreso.GanarXp(ProgresoJugador.XpPorNivel - 10);
+        _partida.ControlCentral.IniciarTurno();
+        GanarRapido(_partida.EmpezarOleada());
+
+        var resultado = _partida.CerrarOleada();
+
+        Assert.IsTrue(resultado.SubioNivel);
+        Assert.IsTrue(_partida.Bitacora.Entradas.Any(e => e.Origen == "Logros" && e.Mensaje.Contains("Segundo hackeo")));
+    }
+
+    [TestMethod]
+    public void ElResumenJuntaLoQueSeHizoEnLaPartida()
+    {
+        _partida.Progreso.GanarCreditos(100);
+        _partida.Transmitir(new MensajeTexto("Parte.", new SinCifrado()));
+        _partida.Boveda.Credencial = CatalogoBoveda.Credenciales.First(c => c.Rol == Rol.Capitan);
+        _partida.LeerArchivoBoveda(CatalogoBoveda.DiarioDelCapitan);
+        _partida.RevisarLogros();
+
+        var resumen = _partida.Resumen();
+
+        Assert.IsFalse(resumen.EstacionSalvada);
+        Assert.AreEqual(0, resumen.OleadasSuperadas);
+        Assert.AreEqual(1, resumen.Transmisiones);
+        Assert.AreEqual(1, resumen.AccesosALaBoveda);
+        Assert.IsTrue(resumen.Insignias.Any(i => i.Patron == Patron.Proxy));
+        Assert.IsNull(resumen.Recluta);
     }
 
     [TestMethod]
