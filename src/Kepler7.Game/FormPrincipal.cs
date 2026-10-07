@@ -27,7 +27,21 @@ public partial class FormPrincipal : Form
 
     internal Partida? PartidaActual { get; private set; }
 
-    internal bool HayPartidaGuardada => _repositorio.Cargar() is not null;
+    // Si la base no responde, "Continuar" queda deshabilitado en vez de tirar la ventana.
+    internal bool HayPartidaGuardada
+    {
+        get
+        {
+            try
+            {
+                return _repositorio.Cargar() is not null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
 
     // Una partida nueva arranca por el tutorial; se puede saltar.
     internal void NuevaPartida()
