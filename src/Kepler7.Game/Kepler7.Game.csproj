@@ -15,4 +15,9 @@
     <ProjectReference Include="..\Kepler7.Services\Kepler7.Services.csproj" />
   </ItemGroup>
 
+  <!-- La cadena de conexión viaja al lado del ejecutable para poder cambiarla sin recompilar. -->
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

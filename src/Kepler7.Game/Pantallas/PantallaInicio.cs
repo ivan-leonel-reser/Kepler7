@@ -1,4 +1,5 @@
 using Kepler7.Core.Juego;
+using Kepler7.Core.Persistencia;
 
 namespace Kepler7.Game.Pantallas;
 
@@ -34,7 +35,17 @@ internal class PantallaInicio : Pantalla
         };
         columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, salir]);
 
+        // Dónde se guarda la partida. Si SQL Server no responde, acá se entera el jugador.
+        var guardado = Tema.CrearEtiqueta($"Guardado: {Repositorios.Descripcion}", Tema.Chica,
+            Repositorios.UsaSqlServer ? Tema.TextoTenue : Tema.Advertencia);
+        guardado.Dock = DockStyle.Bottom;
+        guardado.AutoSize = false;
+        guardado.Height = 40;
+        guardado.Padding = new Padding(20, 0, 20, 0);
+        guardado.TextAlign = ContentAlignment.MiddleLeft;
+
         Controls.Add(columna);
+        Controls.Add(guardado);
         MantenerCentrado(columna);
     }
 
