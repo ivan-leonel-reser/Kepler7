@@ -11,6 +11,7 @@ using Kepler7.Core.Patrones.Estructurales.Flyweight;
 using Kepler7.Core.Patrones.Estructurales.Proxy;
 using Kepler7.Core.Persistencia;
 using Kepler7.Core.Progreso;
+using Kepler7.DAL;
 using Kepler7.Services;
 
 namespace Kepler7.Core.Juego;
@@ -127,10 +128,20 @@ public class Partida
         return partida;
     }
 
+    // Si la base se cayó en medio de la partida, no se pierde el juego: queda el aviso y se sigue en memoria.
     public void Guardar()
     {
-        if (!Terminada)
+        if (Terminada)
+            return;
+
+        try
+        {
             _repositorio.Guardar(Progreso);
+        }
+        catch (ErrorDePersistencia e)
+        {
+            Bitacora.Registrar("Guardado", $"No se pudo guardar la partida: {e.Message}", TipoEntrada.Peligro);
+        }
     }
 
     /// <summary>El ingeniero jefe arma la nave con la receta elegida y la deja lista para la próxima oleada.</summary>

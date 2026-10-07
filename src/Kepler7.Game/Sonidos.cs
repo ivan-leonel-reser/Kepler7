@@ -35,7 +35,16 @@ internal static class Sonidos
             reproductor = new SoundPlayer(Generar(notas));
             Cache[nombre] = reproductor;
         }
-        reproductor.Play();
+
+        // Sin dispositivo de audio el juego sigue igual, solo que en silencio.
+        try
+        {
+            reproductor.Play();
+        }
+        catch (Exception)
+        {
+            Activados = false;
+        }
     }
 
     // Arma un WAV PCM de 8 bits mono con las notas seguidas, con un pequeño fundido para que no haga clic.
