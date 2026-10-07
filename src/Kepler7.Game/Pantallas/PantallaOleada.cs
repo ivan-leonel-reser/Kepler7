@@ -311,15 +311,17 @@ internal class PantallaOleada : Pantalla
                 ? "Kepler-7 está a salvo: resististe las 6 oleadas."
                 : $"Oleada superada: +{resultado.Xp} XP · +{resultado.Creditos} créditos" + (resultado.SubioNivel ? " · subiste de nivel" : "");
             _mensajeResultado.ForeColor = Tema.Exito;
-            _botonResultado.Text = salvada ? "Menú principal" : "Volver a la estación";
-            _alCerrar = salvada ? Principal.IrAInicio : Principal.IrAEstacion;
+            _botonResultado.Text = salvada ? "Ver el resumen" : "Volver a la estación";
+            _alCerrar = salvada
+                ? () => Principal.Mostrar(new PantallaFinal(Principal, _partida.Resumen(), victoria: true))
+                : Principal.IrAEstacion;
         }
         else
         {
             _mensajeResultado.Text = "Cayó el escuadrón. Kepler-7 se apaga.";
             _mensajeResultado.ForeColor = Tema.Peligro;
-            _botonResultado.Text = "Menú principal";
-            _alCerrar = Principal.TerminarPartida;
+            _botonResultado.Text = "Ver el resumen";
+            _alCerrar = () => Principal.Mostrar(new PantallaFinal(Principal, _partida.Resumen(), victoria: false));
         }
         _resultado.Visible = true;
     }

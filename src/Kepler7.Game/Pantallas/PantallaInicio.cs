@@ -22,6 +22,9 @@ internal class PantallaInicio : Pantalla
         continuar.Enabled = Principal.HayPartidaGuardada;
         continuar.Click += (_, _) => Principal.ContinuarPartida();
 
+        var comoSeJuega = Tema.CrearBoton("Cómo se juega");
+        comoSeJuega.Click += (_, _) => Principal.MostrarTutorial(Principal.IrAInicio);
+
         var salir = Tema.CrearBoton("Salir");
         salir.Click += (_, _) => Principal.Close();
 
@@ -33,7 +36,7 @@ internal class PantallaInicio : Pantalla
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = Color.Transparent,
         };
-        columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, salir]);
+        columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, comoSeJuega, salir]);
 
         // Dónde se guarda la partida. Si SQL Server no responde, acá se entera el jugador.
         var guardado = Tema.CrearEtiqueta($"Guardado: {Repositorios.Descripcion}", Tema.Chica,

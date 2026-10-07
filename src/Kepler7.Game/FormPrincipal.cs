@@ -29,11 +29,14 @@ public partial class FormPrincipal : Form
 
     internal bool HayPartidaGuardada => _repositorio.Cargar() is not null;
 
+    // Una partida nueva arranca por el tutorial; se puede saltar.
     internal void NuevaPartida()
     {
         PartidaActual = Partida.Nueva(_repositorio, new Aleatorio());
-        IrAEstacion();
+        MostrarTutorial(IrAEstacion);
     }
+
+    internal void MostrarTutorial(Action alTerminar) => Mostrar(new PantallaTutorial(this, alTerminar));
 
     internal void ContinuarPartida()
     {
