@@ -207,14 +207,22 @@ internal class PantallaOleada : Pantalla
         var actor = _seleccionada;
         if (actor is not null && _pendiente == AccionPendiente.Atacar && _oleada.ObjetivosDeAtaque(actor).Contains(unidad))
         {
+            var antes = unidad.Vida;
             _oleada.Atacar(actor, unidad);
-            _campo.MarcarGolpe(unidad);
+            _campo.MarcarGolpe(unidad, antes - unidad.Vida);
+            if (unidad.EstaViva)
+                Sonidos.Golpe();
+            else
+                Sonidos.Caida();
             DespuesDeActuar(true);
             return;
         }
         if (actor is not null && _pendiente == AccionPendiente.Curar && _oleada.ObjetivosDeCuracion(actor).Contains(unidad))
         {
+            var antes = unidad.Vida;
             _oleada.Curar(actor, unidad);
+            _campo.MostrarNumero(unidad, $"+{unidad.Vida - antes}", Tema.Exito);
+            Sonidos.Curacion();
             DespuesDeActuar(true);
             return;
         }
@@ -278,9 +286,17 @@ internal class PantallaOleada : Pantalla
 
     private void JugarEnemigo()
     {
+        var vidas = _oleada.Escuadron.ToDictionary(u => (Unidad)u, u => u.Vida);
         var jugada = _oleada.JugarSiguienteEnemigo();
         if (jugada?.Objetivo is { } objetivo)
-            _campo.MarcarGolpe(objetivo);
+        {
+            var perdida = vidas.TryGetValue(objetivo, out var antes) ? antes - objetivo.Vida : -1;
+            _campo.MarcarGolpe(objetivo, perdida);
+            if (perdida > 0)
+                Sonidos.Golpe();
+            if (!objetivo.EstaViva)
+                Sonidos.Caida();
+        }
 
         if (_oleada.Terminada)
         {
@@ -306,6 +322,7 @@ internal class PantallaOleada : Pantalla
 
         if (resultado.Victoria)
         {
+            Sonidos.Victoria();
             var salvada = _partida.Progreso.EstacionSalvada;
             _mensajeResultado.Text = salvada
                 ? "Kepler-7 está a salvo: resististe las 6 oleadas."
@@ -318,6 +335,7 @@ internal class PantallaOleada : Pantalla
         }
         else
         {
+            Sonidos.Derrota();
             _mensajeResultado.Text = "Cayó el escuadrón. Kepler-7 se apaga.";
             _mensajeResultado.ForeColor = Tema.Peligro;
             _botonResultado.Text = "Ver el resumen";
@@ -331,7 +349,10 @@ internal class PantallaOleada : Pantalla
         // Primero lo que pasó en la oleada, así la insignia queda debajo de la jugada que la dio.
         MostrarEntradasNuevas();
         foreach (var insignia in _partida.RevisarLogros())
+        {
             _consola.Agregar(new EntradaBitacora("Logros", $"Insignia desbloqueada: {insignia.Nombre}", TipoEntrada.Exito));
+            Sonidos.Insignia();
+        }
     }
 
     private void SeleccionarSiguiente() =>
