@@ -26,6 +26,10 @@ public static class GeneradorOleadas
         return enemigos;
     }
 
+    /// <summary>El zángano de más que llega cuando el Enjambre interceptó un mensaje a la Tierra.</summary>
+    public static Enemigo CrearInterceptor(int numeroOleada) =>
+        new("Zángano interceptor", vidaMaxima: 10 + 2 * numeroOleada, ataque: 2 + numeroOleada / 2, estrategia: new IAAgresiva());
+
     private static Enemigo CrearEnemigo(char tipo, int numero, int oleada) => tipo switch
     {
         'Z' => new Enemigo($"Zángano {numero}", vidaMaxima: 10 + 2 * oleada, ataque: 2 + oleada / 2, estrategia: new IAAgresiva()),

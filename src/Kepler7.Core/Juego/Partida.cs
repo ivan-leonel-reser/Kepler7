@@ -5,6 +5,7 @@ using Kepler7.Core.Patrones.Comportamiento.State;
 using Kepler7.Core.Patrones.Comportamiento.Visitor;
 using Kepler7.Core.Patrones.Creacionales.Builder;
 using Kepler7.Core.Patrones.Creacionales.Prototype;
+using Kepler7.Core.Patrones.Estructurales.Bridge;
 using Kepler7.Core.Patrones.Estructurales.Facade;
 using Kepler7.Core.Patrones.Estructurales.Flyweight;
 using Kepler7.Core.Patrones.Estructurales.Proxy;
@@ -28,6 +29,10 @@ public class Partida
     private readonly HashSet<string> _analizadoresUsados = [];
     private readonly Dictionary<UnidadEscuadron, FichaSoldado> _fichas = [];
     private readonly HashSet<int> _informesLeidos = [];
+    private readonly HashSet<string> _cifradosUsados = [];
+    private readonly List<Transmision> _transmisiones = [];
+    private int _barricadasDeRefuerzo;
+    private bool _mensajeInterceptado;
     private UnidadEscuadron? _unidadRecluta;
     private UnidadEscuadron? _unidadClon;
     private bool _clonModificado;
@@ -75,6 +80,20 @@ public class Partida
 
     /// <summary>Si ya se leyó el informe de la próxima oleada: al empezarla, la IA de cada enemigo se ve desde el primer turno.</summary>
     public bool InformeLeido => _informesLeidos.Contains(NumeroProximaOleada);
+
+    /// <summary>Los mensajes que ya salieron hacia la Tierra, del primero al último.</summary>
+    public IReadOnlyList<Transmision> Transmisiones => _transmisiones;
+
+    public Transmision? UltimaTransmision => _transmisiones.Count > 0 ? _transmisiones[^1] : null;
+
+    /// <summary>La antena manda un solo mensaje por oleada: se libera cuando empieza la siguiente.</summary>
+    public bool AntenaDisponible { get; private set; } = true;
+
+    /// <summary>Barricadas que la Tierra ya mandó para la próxima oleada.</summary>
+    public int BarricadasDeRefuerzo => _barricadasDeRefuerzo;
+
+    public bool PuedeTransmitir(Mensaje mensaje) =>
+        !Terminada && AntenaDisponible && Progreso.Creditos >= mensaje.Cifrado.Costo;
 
     /// <summary>A quiénes se puede clonar: todo el escuadrón menos el propio clon.</summary>
     public IReadOnlyList<UnidadEscuadron> Clonables => Escuadron.Where(u => u != _unidadClon).ToList();
@@ -223,6 +242,43 @@ public class Partida
         }
     }
 
+    /// <summary>
+    /// Manda el mensaje a la Tierra con el cifrado que tenga puesto. Cobra el cifrado, tira el dado de la
+    /// intercepción y aplica lo que la Tierra responde: los créditos ahora y las barricadas en la próxima oleada.
+    /// </summary>
+    public Transmision Transmitir(Mensaje mensaje)
+    {
+        if (!AntenaDisponible)
+            throw new InvalidOperationException("La antena ya transmitió: hay un mensaje por oleada.");
+        if (!PuedeTransmitir(mensaje))
+            throw new InvalidOperationException($"Transmitir con {mensaje.Cifrado.Nombre} cuesta {mensaje.Cifrado.Costo} créditos.");
+
+        var enviada = mensaje.Enviar();
+        var interceptada = enviada.RiesgoIntercepcion > 0 && Aleatorio.Probabilidad(enviada.RiesgoIntercepcion);
+        var transmision = enviada with { Interceptada = interceptada };
+
+        Progreso.GastarCreditos(transmision.Costo);
+        AntenaDisponible = false;
+        _cifradosUsados.Add(transmision.Cifrado);
+        _transmisiones.Add(transmision);
+        Bitacora.Registrar("Comunicaciones", $"Mensaje de {transmision.Tipo.ToLowerInvariant()} enviado a la Tierra ({transmision.Cifrado}, {transmision.Costo} créditos).");
+
+        if (interceptada)
+        {
+            _mensajeInterceptado = true;
+            Bitacora.Registrar("Comunicaciones", "El Enjambre interceptó el mensaje: la próxima oleada viene con un zángano más.", TipoEntrada.Peligro);
+        }
+
+        var refuerzo = transmision.Refuerzo;
+        if (refuerzo.Creditos > 0)
+            Progreso.GanarCreditos(refuerzo.Creditos);
+        _barricadasDeRefuerzo += refuerzo.Barricadas;
+        Bitacora.Registrar("Comunicaciones", $"La Tierra responde. {refuerzo.Descripcion}.", TipoEntrada.Exito);
+
+        Guardar();
+        return transmision;
+    }
+
     /// <summary>Pasea por todo el Almacén al analizador que eligió el jugador.</summary>
     public void AnalizarAlmacen(IVisitor visitante)
     {
@@ -263,7 +319,10 @@ public class Partida
         }
 
         var numero = NumeroProximaOleada;
-        var oleada = new Oleada(numero, Escuadron, GeneradorOleadas.Crear(numero), Aleatorio);
+        var enjambre = GeneradorOleadas.Crear(numero).ToList();
+        if (_mensajeInterceptado)
+            enjambre.Add(GeneradorOleadas.CrearInterceptor(numero));
+        var oleada = new Oleada(numero, Escuadron, enjambre, Aleatorio);
 
         // La alarma la da el Control Central: una sola orden pone toda la estación en emergencia.
         foreach (var paso in ControlCentral.EntrarEnEmergencia())
@@ -282,6 +341,14 @@ public class Partida
                 enemigo.IARevelada = true;
             oleada.Bitacora.Registrar("Bóveda", "Gracias al informe de la bóveda, la IA de cada enemigo está a la vista.", TipoEntrada.Exito);
         }
+        if (_mensajeInterceptado)
+            oleada.Bitacora.Registrar("Comunicaciones", "El Enjambre leyó el mensaje a la Tierra y manda un zángano más.", TipoEntrada.Peligro);
+        if (_barricadasDeRefuerzo > 0)
+            oleada.RecibirRefuerzo(_barricadasDeRefuerzo);
+        // Lo que se pidió por la antena ya se usó en esta oleada; para la siguiente se vuelve a transmitir.
+        _mensajeInterceptado = false;
+        _barricadasDeRefuerzo = 0;
+        AntenaDisponible = true;
         var enemigos = oleada.Campo.UnidadesVivasDe(Bando.Enjambre).Count();
         oleada.Bitacora.Registrar("Oleada", $"Oleada {numero} de {ProgresoJugador.OleadasTotales}: {enemigos} enemigos. Le toca al escuadrón.", TipoEntrada.Peligro);
 
@@ -344,6 +411,9 @@ public class Partida
 
         if (Boveda.AccesosConcedidos > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Proxy));
+
+        if (_cifradosUsados.Count == CatalogoComunicaciones.Cifrados.Count)
+            Sumar(nuevas, OtorgarInsignia(Patron.Bridge));
 
         if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
             Sumar(nuevas, OtorgarInsignia(Patron.Command));

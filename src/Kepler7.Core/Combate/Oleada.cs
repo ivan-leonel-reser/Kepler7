@@ -25,6 +25,7 @@ public class Oleada
     private readonly Queue<Enemigo> _enemigosPorJugar = new();
     private readonly List<JugadaEnemiga> _ultimasJugadas = [];
     private readonly HashSet<Unidad> _cambiaronDeEstado = [];
+    private int _barricadasExtra;
 
     public Oleada(int numero, IEnumerable<UnidadEscuadron> escuadron, IEnumerable<Enemigo> enemigos, IAleatorio aleatorio)
     {
@@ -52,7 +53,7 @@ public class Oleada
     public IEnumerable<UnidadEscuadron> Escuadron =>
         Campo.UnidadesVivasDe(Bando.Escuadron).OfType<UnidadEscuadron>();
 
-    public int BarricadasDisponibles => BarricadasPorOleada - Campo.Unidades.OfType<Barricada>().Count();
+    public int BarricadasDisponibles => BarricadasPorOleada + _barricadasExtra - Campo.Unidades.OfType<Barricada>().Count();
 
     /// <summary>Las clases del escuadrón que ya jugaron algún turno en esta oleada.</summary>
     public IReadOnlyCollection<ClaseUnidad> ClasesQueJugaron => _clasesQueJugaron;
@@ -115,6 +116,17 @@ public class Oleada
 
         if (nave.BonusCreditos > 0)
             Bitacora.Registrar("Hangar", $"Con la bodega, ganar la oleada da {nave.BonusCreditos}% más de créditos.", TipoEntrada.Exito);
+    }
+
+    /// <summary>Material que mandó la Tierra: barricadas de más para esta oleada. Llega antes de la primera jugada.</summary>
+    public void RecibirRefuerzo(int barricadas)
+    {
+        Exigir(Turno == 1 && _yaActuaron.Count == 0, "Los refuerzos llegan antes de empezar la oleada.");
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(barricadas);
+
+        _barricadasExtra += barricadas;
+        var cuantas = barricadas == 1 ? "una barricada más" : $"{barricadas} barricadas más";
+        Bitacora.Registrar("Comunicaciones", $"Llega material de la Tierra: {cuantas} para esta oleada.", TipoEntrada.Exito);
     }
 
     public bool PuedeHackear(Enemigo enemigo) =>
