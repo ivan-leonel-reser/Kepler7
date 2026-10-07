@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Acceso a datos. Implementa los contratos de persistencia que define BE; no conoce a Core ni a la interfaz.
-       Pendiente: Microsoft.Data.SqlClient, cuando la cátedra confirme que está permitido. -->
+       Microsoft.Data.SqlClient es el único paquete: en .NET 8 el cliente de SQL Server no viene en el runtime. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
@@ -9,6 +9,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Kepler7.BE\Kepler7.BE.csproj" />
     <ProjectReference Include="..\Kepler7.Services\Kepler7.Services.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+  </ItemGroup>
+
+  <!-- El script de creación viaja dentro de la capa de datos: el juego lo corre al arrancar. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\db\01_crear_base.sql" LogicalName="crear_base.sql" />
   </ItemGroup>
 
 </Project>
