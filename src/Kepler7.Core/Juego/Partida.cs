@@ -345,6 +345,7 @@ public class Partida
             oleada.Bitacora.Registrar("Comunicaciones", "El Enjambre leyó el mensaje a la Tierra y manda un zángano más.", TipoEntrada.Peligro);
         if (_barricadasDeRefuerzo > 0)
             oleada.RecibirRefuerzo(_barricadasDeRefuerzo);
+        oleada.AmpliarLimites(Desbloqueos.HackeosExtra(Progreso.Nivel), Desbloqueos.BarricadasExtra(Progreso.Nivel), $"ser nivel {Progreso.Nivel}");
         // Lo que se pidió por la antena ya se usó en esta oleada; para la siguiente se vuelve a transmitir.
         _mensajeInterceptado = false;
         _barricadasDeRefuerzo = 0;
@@ -372,11 +373,13 @@ public class Partida
         }
 
         var xp = 40 + 10 * oleada.Numero;
-        var creditos = 50 + 25 * oleada.Numero;
+        var creditos = 50 + 25 * oleada.Numero + Desbloqueos.CreditosExtraPorOleada(Progreso.Nivel);
         creditos += creditos * (oleada.NaveDeApoyo?.BonusCreditos ?? 0) / 100;
         Progreso.SuperarOleada();
         Progreso.GanarCreditos(creditos);
         var subioNivel = Progreso.GanarXp(xp);
+        if (subioNivel)
+            AvisarNivel();
 
         var botin = GeneradorBotin.Crear(oleada.Numero);
         Almacen.AgregarTodos(botin);
@@ -448,10 +451,32 @@ public class Partida
 
         Bitacora.Registrar("Logros", $"Insignia desbloqueada: {insignia.Nombre} ({patron}).", TipoEntrada.Exito);
         if (subioNivel)
-            Bitacora.Registrar("Logros", $"Subiste a nivel {Progreso.Nivel}.", TipoEntrada.Exito);
+            AvisarNivel();
 
         Guardar();
         return insignia;
+    }
+
+    /// <summary>Todo lo que se hizo en la partida, para la pantalla final.</summary>
+    public ResumenPartida Resumen() => new(
+        Progreso.EstacionSalvada,
+        Progreso.OleadasSuperadas,
+        Progreso.Nivel,
+        Progreso.Xp,
+        Progreso.Creditos,
+        Progreso.Insignias.Select(CatalogoInsignias.Obtener).ToList(),
+        _transmisiones.Count,
+        Boveda.AccesosConcedidos,
+        Boveda.IntentosDenegados.Count,
+        Recluta?.Nombre,
+        Clon?.Nombre);
+
+    // Al subir de nivel se anuncia qué se desbloqueó, si hubo algo nuevo.
+    private void AvisarNivel()
+    {
+        var nuevos = Desbloqueos.Todos.Where(d => d.Nivel == Progreso.Nivel).ToList();
+        var detalle = nuevos.Count > 0 ? $" Desbloqueaste: {string.Join(", ", nuevos.Select(d => $"{d.Nombre} ({d.Descripcion.TrimEnd('.')})"))}." : "";
+        Bitacora.Registrar("Logros", $"Subiste a nivel {Progreso.Nivel}.{detalle}", TipoEntrada.Exito);
     }
 
     private static List<UnidadEscuadron> EscuadronInicial() =>

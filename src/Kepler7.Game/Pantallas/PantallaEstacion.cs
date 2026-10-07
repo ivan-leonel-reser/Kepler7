@@ -85,6 +85,13 @@ internal class PantallaEstacion : Pantalla
         var xp = Tema.CrearEtiqueta($"{progreso.XpEnNivelActual}/{ProgresoJugador.XpPorNivel} XP", Tema.Chica, Tema.TextoTenue);
         xp.Location = new Point(278, 53);
 
+        var proximo = Desbloqueos.Proximo(progreso.Nivel);
+        var desbloqueo = Tema.CrearEtiqueta(proximo is null
+            ? "Todas las ventajas de nivel desbloqueadas"
+            : $"Nivel {proximo.Nivel} desbloquea: {proximo.Nombre} (ver Logros)",
+            Tema.Chica, Tema.Advertencia);
+        desbloqueo.Location = new Point(370, 53);
+
         var datos = new FlowLayoutPanel
         {
             Dock = DockStyle.Right,
@@ -110,7 +117,7 @@ internal class PantallaEstacion : Pantalla
             CrearDato("INSIGNIAS", $"{progreso.Insignias.Count}/{CatalogoInsignias.Todas.Count}"),
         ]);
 
-        encabezado.Controls.AddRange([titulo, nivel, barraXp, xp, datos]);
+        encabezado.Controls.AddRange([titulo, nivel, barraXp, xp, desbloqueo, datos]);
         return encabezado;
     }
 
@@ -142,11 +149,14 @@ internal class PantallaEstacion : Pantalla
         var menu = Tema.CrearBoton("Menú principal", 180);
         menu.Click += (_, _) => Principal.IrAInicio();
 
+        var logros = Tema.CrearBoton($"Logros ({partida.Progreso.Insignias.Count}/{CatalogoInsignias.Todas.Count})", 180);
+        logros.Click += (_, _) => Principal.Mostrar(new PantallaLogros(Principal));
+
         var defender = Tema.CrearBoton(TextoDefender(partida), 340);
         defender.Enabled = partida.PuedeDefender;
         defender.Click += (_, _) => Principal.Mostrar(new PantallaOleada(Principal));
 
-        barra.Controls.AddRange([menu, defender]);
+        barra.Controls.AddRange([menu, logros, defender]);
         return barra;
     }
 

@@ -108,9 +108,12 @@ internal class PantallaControlCentral : PantallaModulo
     {
         ActualizarModo();
         foreach (var insignia in Partida.RevisarLogros())
+        {
             _consola.Agregar(new EntradaBitacora("Logros",
                 $"Insignia desbloqueada: {insignia.Nombre} (+{Partida.XpPorInsignia} XP, +{Partida.CreditosPorInsignia} créditos)",
                 TipoEntrada.Exito));
+            Sonidos.Insignia();
+        }
 
         foreach (var boton in _operaciones)
             boton.Enabled = true;

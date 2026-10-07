@@ -20,6 +20,8 @@ internal class VistaCampo : Control
     private readonly Oleada _oleada;
     private readonly Dictionary<Unidad, Rectangle> _zonas = [];
     private readonly System.Windows.Forms.Timer _parpadeo = new() { Interval = 450 };
+    private readonly System.Windows.Forms.Timer _flotantes = new() { Interval = 30 };
+    private readonly List<NumeroFlotante> _numeros = [];
     private Unidad? _golpeada;
     private Unidad? _seleccionada;
     private IReadOnlyCollection<Unidad> _objetivos = [];
@@ -37,6 +39,7 @@ internal class VistaCampo : Control
             _golpeada = null;
             Invalidate();
         };
+        _flotantes.Tick += (_, _) => AvanzarFlotantes();
     }
 
     public event EventHandler<Unidad>? UnidadClickeada;
@@ -48,12 +51,36 @@ internal class VistaCampo : Control
         Invalidate();
     }
 
-    /// <summary>Pinta de rojo por un momento a la unidad que recibió un golpe.</summary>
-    public void MarcarGolpe(Unidad unidad)
+    /// <summary>Pinta de rojo por un momento a la unidad que recibió un golpe y, si perdió vida, lo muestra como un número que sube.</summary>
+    public void MarcarGolpe(Unidad unidad, int vidaPerdida = 0)
     {
         _golpeada = unidad;
         _parpadeo.Stop();
         _parpadeo.Start();
+        if (vidaPerdida > 0)
+            MostrarNumero(unidad, $"-{vidaPerdida}", Tema.Peligro);
+        else if (vidaPerdida == 0 && _zonas.ContainsKey(unidad))
+            MostrarNumero(unidad, "bloqueado", Tema.TextoTenue);
+        Invalidate();
+    }
+
+    /// <summary>Un número que flota sobre la tarjeta y se desvanece: daño, curación o estado.</summary>
+    public void MostrarNumero(Unidad unidad, string texto, Color color)
+    {
+        if (!_zonas.TryGetValue(unidad, out var zona))
+            return;
+
+        _numeros.Add(new NumeroFlotante(texto, color, new Point(zona.X + zona.Width / 2, zona.Y + 30)));
+        _flotantes.Start();
+    }
+
+    private void AvanzarFlotantes()
+    {
+        foreach (var numero in _numeros)
+            numero.Avanzar();
+        _numeros.RemoveAll(n => n.Terminado);
+        if (_numeros.Count == 0)
+            _flotantes.Stop();
         Invalidate();
     }
 
@@ -100,6 +127,9 @@ internal class VistaCampo : Control
         var abajo = arriba + altoColumna;
         if (Height - abajo >= 34)
             DibujarLeyenda(g, abajo + 12);
+
+        foreach (var numero in _numeros)
+            numero.Dibujar(g);
     }
 
     private void DibujarLeyenda(Graphics g, int y)
@@ -241,7 +271,30 @@ internal class VistaCampo : Control
     protected override void Dispose(bool disposing)
     {
         if (disposing)
+        {
             _parpadeo.Dispose();
+            _flotantes.Dispose();
+        }
         base.Dispose(disposing);
+    }
+
+    // Sube unos píxeles por cuadro y se va apagando; dura unos 25 cuadros.
+    private sealed class NumeroFlotante(string texto, Color color, Point origen)
+    {
+        private const int Cuadros = 26;
+        private int _cuadro;
+
+        public bool Terminado => _cuadro >= Cuadros;
+
+        public void Avanzar() => _cuadro++;
+
+        public void Dibujar(Graphics g)
+        {
+            var alfa = 255 * (Cuadros - _cuadro) / Cuadros;
+            var posicion = new Point(origen.X, origen.Y - _cuadro * 2);
+            var tamano = TextRenderer.MeasureText(g, texto, Tema.Destacado);
+            var rectangulo = new Rectangle(posicion.X - tamano.Width / 2, posicion.Y - tamano.Height / 2, tamano.Width, tamano.Height);
+            TextRenderer.DrawText(g, texto, Tema.Destacado, rectangulo, Color.FromArgb(alfa, color), TextFormatFlags.NoPadding);
+        }
     }
 }

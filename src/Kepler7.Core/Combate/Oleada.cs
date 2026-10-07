@@ -66,7 +66,10 @@ public class Oleada
 
     public int HackeosRealizados { get; private set; }
 
-    public int HackeosDisponibles => HackeosPorOleada - HackeosRealizados;
+    /// <summary>Cuántos hackeos admite esta oleada: los de siempre más los que suma el nivel.</summary>
+    public int HackeosPermitidos { get; private set; } = HackeosPorOleada;
+
+    public int HackeosDisponibles => HackeosPermitidos - HackeosRealizados;
 
     /// <summary>Las unidades del escuadrón que cambiaron de estado en esta oleada y siguen en pie.</summary>
     public IEnumerable<UnidadEscuadron> SobrevivientesConEstado => Escuadron.Where(_cambiaronDeEstado.Contains);
@@ -127,6 +130,23 @@ public class Oleada
         _barricadasExtra += barricadas;
         var cuantas = barricadas == 1 ? "una barricada más" : $"{barricadas} barricadas más";
         Bitacora.Registrar("Comunicaciones", $"Llega material de la Tierra: {cuantas} para esta oleada.", TipoEntrada.Exito);
+    }
+
+    /// <summary>Las ventajas que da el nivel del comandante. Se aplican antes de la primera jugada.</summary>
+    public void AmpliarLimites(int hackeos, int barricadas, string motivo)
+    {
+        Exigir(Turno == 1 && _yaActuaron.Count == 0, "Las ventajas del nivel se aplican antes de empezar la oleada.");
+        if (hackeos <= 0 && barricadas <= 0)
+            return;
+
+        HackeosPermitidos += hackeos;
+        _barricadasExtra += barricadas;
+        var partes = new List<string>();
+        if (hackeos > 0)
+            partes.Add(hackeos == 1 ? "un hackeo más" : $"{hackeos} hackeos más");
+        if (barricadas > 0)
+            partes.Add(barricadas == 1 ? "una barricada más" : $"{barricadas} barricadas más");
+        Bitacora.Registrar("Progreso", $"Por {motivo}: {string.Join(" y ", partes)} en esta oleada.", TipoEntrada.Exito);
     }
 
     public bool PuedeHackear(Enemigo enemigo) =>

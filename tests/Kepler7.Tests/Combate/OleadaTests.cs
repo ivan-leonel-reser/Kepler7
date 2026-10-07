@@ -221,6 +221,20 @@ public class OleadaTests
     }
 
     [TestMethod]
+    public void LasVentajasDelNivelSeAplicanAntesDeEmpezar()
+    {
+        var zangano = new Enemigo("Zangano", 30, 3);
+        var oleada = CrearOleada(zangano);
+
+        oleada.AmpliarLimites(1, 2, "ser nivel 5");
+        Assert.AreEqual(Oleada.HackeosPorOleada + 1, oleada.HackeosDisponibles);
+        Assert.AreEqual(Oleada.BarricadasPorOleada + 2, oleada.BarricadasDisponibles);
+
+        oleada.Atacar(_soldado, zangano);
+        Assert.ThrowsExactly<InvalidOperationException>(() => oleada.AmpliarLimites(1, 0, "x"));
+    }
+
+    [TestMethod]
     public void ElRefuerzoDeLaTierraSumaBarricadasSoloAntesDeEmpezar()
     {
         var zangano = new Enemigo("Zangano", 30, 3);
