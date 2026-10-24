@@ -410,44 +410,43 @@ public class Partida
     public IReadOnlyList<Insignia> RevisarLogros()
     {
         var nuevas = new List<Insignia>();
-
-        if (ControlCentral.TurnosIniciados > 0 && ControlCentral.EmergenciasDeclaradas > 0 && ControlCentral.VecesApagada > 0)
-            Sumar(nuevas, OtorgarInsignia(Patron.Facade));
-
-        if (_recetasUsadas.Count == CatalogoRecetas.Crear().Count)
-            Sumar(nuevas, OtorgarInsignia(Patron.Builder));
-
-        if (Recluta is not null)
-            Sumar(nuevas, OtorgarInsignia(Patron.Flyweight));
-
-        if (_clonModificado)
-            Sumar(nuevas, OtorgarInsignia(Patron.Prototype));
-
-        if (Boveda.AccesosConcedidos > 0)
-            Sumar(nuevas, OtorgarInsignia(Patron.Proxy));
-
-        if (_cifradosUsados.Count == CatalogoComunicaciones.Cifrados.Count)
-            Sumar(nuevas, OtorgarInsignia(Patron.Bridge));
-
-        if (OleadaActual is { } oleada && oleada.Comandos.VecesDeshecho > 0 && oleada.Comandos.VecesRehecho > 0)
-            Sumar(nuevas, OtorgarInsignia(Patron.Command));
-
-        if (OleadaActual is { } actual && actual.ClasesQueJugaron.Count == Enum.GetValues<ClaseUnidad>().Length)
-            Sumar(nuevas, OtorgarInsignia(Patron.TemplateMethod));
-
-        if (_analizadoresUsados.Count == CatalogoVisitantes.Crear().Count)
-            Sumar(nuevas, OtorgarInsignia(Patron.Visitor));
-
-        if (OleadaActual is { GolpesAbsorbidos: > 0 })
-            Sumar(nuevas, OtorgarInsignia(Patron.ChainOfResponsibility));
-
-        if (OleadaActual is { HackeosRealizados: > 0 })
-            Sumar(nuevas, OtorgarInsignia(Patron.Strategy));
-
-        if (OleadaActual is { Estado: EstadoOleada.Victoria } ganada && ganada.SobrevivientesConEstado.Any())
-            Sumar(nuevas, OtorgarInsignia(Patron.State));
-
+        foreach (var insignia in CatalogoInsignias.Todas)
+        {
+            if (AvanceDe(insignia.Patron).Completo)
+                Sumar(nuevas, OtorgarInsignia(insignia.Patron));
+        }
         return nuevas;
+    }
+
+    /// <summary>
+    /// Qué tan cerca está el jugador de cada insignia. Lo que se hace dentro de una oleada
+    /// (deshacer, hackear, absorber un golpe...) cuenta solo para la última oleada jugada.
+    /// </summary>
+    public AvanceInsignia AvanceDe(Patron patron)
+    {
+        var oleada = OleadaActual;
+        var avance = patron switch
+        {
+            Patron.Builder => new AvanceInsignia(_recetasUsadas.Count, CatalogoRecetas.Crear().Count, "recetas usadas"),
+            Patron.Prototype => Uno(_clonModificado, "clon con habilidades cambiadas"),
+            Patron.Bridge => new AvanceInsignia(_cifradosUsados.Count, CatalogoComunicaciones.Cifrados.Count, "cifrados usados"),
+            Patron.Facade => new AvanceInsignia(
+                new[] { ControlCentral.TurnosIniciados, ControlCentral.EmergenciasDeclaradas, ControlCentral.VecesApagada }.Count(n => n > 0),
+                3, "operaciones del Control Central"),
+            Patron.Flyweight => Uno(Recluta is not null, "recluta del censo"),
+            Patron.Proxy => Uno(Boveda.AccesosConcedidos > 0, "acceso autorizado a la bóveda"),
+            Patron.ChainOfResponsibility => Uno(oleada is { GolpesAbsorbidos: > 0 }, "golpe absorbido entero"),
+            Patron.Command => new AvanceInsignia(
+                (oleada is { Comandos.VecesDeshecho: > 0 } ? 1 : 0) + (oleada is { Comandos.VecesRehecho: > 0 } ? 1 : 0),
+                2, "deshacer y rehacer en la oleada"),
+            Patron.Visitor => new AvanceInsignia(_analizadoresUsados.Count, CatalogoVisitantes.Crear().Count, "analizadores usados"),
+            Patron.State => Uno(oleada is { Estado: EstadoOleada.Victoria } && oleada.SobrevivientesConEstado.Any(), "oleada ganada con un estado"),
+            Patron.TemplateMethod => new AvanceInsignia(oleada?.ClasesQueJugaron.Count ?? 0, Enum.GetValues<ClaseUnidad>().Length, "clases que jugaron en la oleada"),
+            Patron.Strategy => Uno(oleada is { HackeosRealizados: > 0 }, "hackeo en la oleada"),
+            _ => throw new ArgumentOutOfRangeException(nameof(patron)),
+        };
+        // Una insignia ganada no se pierde aunque la oleada siguiente arranque de cero.
+        return Progreso.TieneInsignia(patron) ? avance with { Actual = avance.Requerido } : avance;
     }
 
     /// <summary>Da la insignia con su recompensa y guarda. Devuelve null si ya la tenía.</summary>
@@ -507,6 +506,8 @@ public class Partida
 
     private void AvisarEstacionApagada() =>
         Bitacora.Registrar("Control central", "La estación está apagada. Iniciá un turno desde el Control Central.", TipoEntrada.Advertencia);
+
+    private static AvanceInsignia Uno(bool hecho, string detalle) => new(hecho ? 1 : 0, 1, detalle);
 
     private static void Sumar(List<Insignia> nuevas, Insignia? insignia)
     {
