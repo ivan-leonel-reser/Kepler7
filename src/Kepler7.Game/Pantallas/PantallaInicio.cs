@@ -25,6 +25,9 @@ internal class PantallaInicio : Pantalla
         var comoSeJuega = Tema.CrearBoton("Cómo se juega");
         comoSeJuega.Click += (_, _) => Principal.MostrarTutorial(Principal.IrAInicio);
 
+        var historial = Tema.CrearBoton("Historial de partidas");
+        historial.Click += (_, _) => Principal.Mostrar(new PantallaHistorial(Principal));
+
         var sonido = Tema.CrearBoton(TextoSonido());
         sonido.Click += (_, _) =>
         {
@@ -44,7 +47,7 @@ internal class PantallaInicio : Pantalla
             AutoSizeMode = AutoSizeMode.GrowAndShrink,
             BackColor = Color.Transparent,
         };
-        columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, comoSeJuega, sonido, salir]);
+        columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, comoSeJuega, historial, sonido, salir]);
 
         // Dónde se guarda la partida. Si SQL Server no responde, acá se entera el jugador.
         var guardado = Tema.CrearEtiqueta($"Guardado: {Repositorios.Descripcion}", Tema.Chica,
