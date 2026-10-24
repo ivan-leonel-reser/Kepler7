@@ -32,6 +32,7 @@ public class Partida
     private readonly HashSet<int> _informesLeidos = [];
     private readonly HashSet<string> _cifradosUsados = [];
     private readonly List<Transmision> _transmisiones = [];
+    private readonly List<RegistroOleada> _oleadasJugadas = [];
     private int _barricadasDeRefuerzo;
     private bool _mensajeInterceptado;
     private UnidadEscuadron? _unidadRecluta;
@@ -380,6 +381,7 @@ public class Partida
             Bitacora.Registrar("Oleada", $"El escuadrón cayó en la oleada {oleada.Numero}. Kepler-7 se apaga.", TipoEntrada.Peligro);
             Terminada = true;
             _repositorio.Borrar();
+            _oleadasJugadas.Add(Registrar(oleada, 0, 0));
             return new ResultadoOleada(false, 0, 0, false, apagado);
         }
 
@@ -391,6 +393,8 @@ public class Partida
         var subioNivel = Progreso.GanarXp(xp);
         if (subioNivel)
             AvisarNivel();
+
+        _oleadasJugadas.Add(Registrar(oleada, xp, creditos));
 
         var botin = GeneradorBotin.Crear(oleada.Numero);
         Almacen.AgregarTodos(botin);
@@ -479,7 +483,27 @@ public class Partida
         Boveda.AccesosConcedidos,
         Boveda.IntentosDenegados.Count,
         Recluta?.Nombre,
-        Clon?.Nombre);
+        Clon?.Nombre,
+        _oleadasJugadas.ToList());
+
+    /// <summary>Las oleadas que se jugaron desde que se abrió la partida. Al continuar una guardada, las anteriores no están.</summary>
+    public IReadOnlyList<RegistroOleada> OleadasJugadas => _oleadasJugadas;
+
+    private static RegistroOleada Registrar(Oleada oleada, int xp, int creditos)
+    {
+        var enemigos = oleada.Campo.Unidades.OfType<Enemigo>().ToList();
+        return new RegistroOleada(
+            oleada.Numero,
+            oleada.Estado == EstadoOleada.Victoria,
+            oleada.Turno,
+            enemigos.Count,
+            enemigos.Count(e => !e.EstaViva),
+            oleada.Campo.Unidades.OfType<UnidadEscuadron>().Count(u => !u.EstaViva),
+            oleada.GolpesAbsorbidos,
+            oleada.HackeosRealizados,
+            xp,
+            creditos);
+    }
 
     // Al subir de nivel se anuncia qué se desbloqueó, si hubo algo nuevo.
     private void AvisarNivel()

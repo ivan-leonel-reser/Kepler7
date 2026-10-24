@@ -14,4 +14,5 @@ public record ResumenPartida(
     int AccesosALaBoveda,
     int IntentosDenegados,
     string? Recluta,
-    string? Clon);
+    string? Clon,
+    IReadOnlyList<RegistroOleada> Oleadas);
