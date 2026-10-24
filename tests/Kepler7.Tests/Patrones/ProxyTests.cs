@@ -128,6 +128,30 @@ public class ProxyTests
     }
 
     [TestMethod]
+    public void SiElRegistroNoRespondeElAccesoSeNiegaIgual()
+    {
+        var proxy = new ProxyBoveda(AbrirBoveda, new RegistroQueFalla()) { Credencial = Soldado };
+
+        var error = Assert.ThrowsExactly<AccesoDenegadoException>(() => proxy.LeerArchivo("plano"));
+
+        Assert.IsFalse(error.Registrado);
+        Assert.AreEqual(0, _vecesAbierta);
+    }
+
+    [TestMethod]
+    public void ConElRegistroCaidoElResumenDeLaPartidaNoSeRompe()
+    {
+        var partida = new Kepler7.Core.Juego.Partida(new RepositorioProgresoFalso(), new Kepler7.BE.ProgresoJugador(), new AleatorioFijo(),
+            new RegistroQueFalla(), new HistorialQueFalla());
+        partida.Boveda.Credencial = Soldado;
+
+        Assert.ThrowsExactly<AccesoDenegadoException>(() => partida.LeerArchivoBoveda("informe-oleada-1"));
+
+        Assert.IsNull(partida.Resumen().IntentosDenegados);
+        Assert.IsTrue(partida.Bitacora.Entradas.Any(e => e.Mensaje.Contains("No quedó en el registro")));
+    }
+
+    [TestMethod]
     public void ElCatalogoTieneUnInformePorOleadaYElDiario()
     {
         var boveda = CatalogoBoveda.CrearBoveda();

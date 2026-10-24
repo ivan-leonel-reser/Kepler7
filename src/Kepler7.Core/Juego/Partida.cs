@@ -267,9 +267,10 @@ public class Partida
             Bitacora.Registrar("Bóveda", $"{quien} pudo {nombre.ToLowerInvariant()} el archivo '{id}'.", TipoEntrada.Exito);
             return resultado;
         }
-        catch (AccesoDenegadoException)
+        catch (AccesoDenegadoException e)
         {
-            Bitacora.Registrar("Bóveda", $"Acceso denegado: {quien} intentó {nombre.ToLowerInvariant()} '{id}'. Quedó en el registro.", TipoEntrada.Peligro);
+            var registro = e.Registrado ? "Quedó en el registro." : "No quedó en el registro: la base no responde.";
+            Bitacora.Registrar("Bóveda", $"Acceso denegado: {quien} intentó {nombre.ToLowerInvariant()} '{id}'. {registro}", TipoEntrada.Peligro);
             throw;
         }
     }
@@ -505,7 +506,7 @@ public class Partida
         Progreso.Insignias.Select(CatalogoInsignias.Obtener).ToList(),
         _transmisiones.Count,
         Boveda.AccesosConcedidos,
-        Boveda.IntentosDenegados.Count,
+        ContarIntentosDenegados(),
         Recluta?.Nombre,
         Clon?.Nombre,
         _oleadasJugadas.ToList());
@@ -527,6 +528,19 @@ public class Partida
             oleada.HackeosRealizados,
             xp,
             creditos);
+    }
+
+    // null si el registro de la bóveda no se puede leer: la pantalla final lo dice en vez de mostrar un cero.
+    private int? ContarIntentosDenegados()
+    {
+        try
+        {
+            return Boveda.IntentosDenegados.Count;
+        }
+        catch (ErrorDePersistencia)
+        {
+            return null;
+        }
     }
 
     // Se anota una sola vez, cuando la partida termina. Si la base falla, queda el aviso y se sigue.

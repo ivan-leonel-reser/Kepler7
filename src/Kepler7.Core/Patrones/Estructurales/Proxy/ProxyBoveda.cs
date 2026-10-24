@@ -1,4 +1,5 @@
 using Kepler7.BE;
+using Kepler7.DAL;
 
 namespace Kepler7.Core.Patrones.Estructurales.Proxy;
 
@@ -45,8 +46,17 @@ public class ProxyBoveda : IBoveda
         if (!EstaAutorizada(Credencial))
         {
             var intento = new IntentoAcceso(DateTime.Now, Credencial?.Usuario ?? "desconocido", Credencial?.NombreRol ?? "sin credencial", operacion, id);
-            _registro.Registrar(intento);
-            throw new AccesoDenegadoException(intento);
+            // Aunque el registro no responda, el acceso se niega igual: el control no depende de la base.
+            var registrado = true;
+            try
+            {
+                _registro.Registrar(intento);
+            }
+            catch (ErrorDePersistencia)
+            {
+                registrado = false;
+            }
+            throw new AccesoDenegadoException(intento, registrado);
         }
 
         AccesosConcedidos++;

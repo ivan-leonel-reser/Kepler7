@@ -122,7 +122,9 @@ internal class PantallaFinal : Pantalla
                 Cantidad(r.Oleadas.Sum(o => o.GolpesAbsorbidos), "golpe absorbido", "golpes absorbidos"),
                 Cantidad(r.Oleadas.Sum(o => o.Hackeos), "hackeo", "hackeos")));
         yield return ("COMUNICACIONES", r.Transmisiones == 1 ? "1 mensaje a la Tierra" : $"{r.Transmisiones} mensajes a la Tierra");
-        yield return ("BÓVEDA", $"{r.AccesosALaBoveda} accesos autorizados · {r.IntentosDenegados} intentos denegados en el registro");
+        yield return ("BÓVEDA", $"{r.AccesosALaBoveda} accesos autorizados · " + (r.IntentosDenegados is { } denegados
+            ? $"{denegados} intentos denegados en el registro"
+            : "el registro no se pudo leer"));
         var ventajas = Desbloqueos.Alcanzados(r.Nivel);
         yield return ("VENTAJAS DEL NIVEL", ventajas.Count == 0 ? "ninguna" : string.Join(", ", ventajas.Select(d => d.Nombre)));
     }
