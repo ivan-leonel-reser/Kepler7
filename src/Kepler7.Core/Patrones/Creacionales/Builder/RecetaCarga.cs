@@ -25,8 +25,8 @@ public class RecetaCarga : INaveBuilder
 
     public void InstalarEscudo()
     {
-        _nave.Escudo = 30;
-        _nave.Montar("Escudo", "Deflector de 30 puntos");
+        _nave.Escudo = 8;
+        _nave.Montar("Escudo", "Deflector de 8 puntos");
     }
 
     public void InstalarArmas()

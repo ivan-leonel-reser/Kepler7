@@ -25,8 +25,8 @@ public class RecetaExploradora : INaveBuilder
 
     public void InstalarEscudo()
     {
-        _nave.Escudo = 20;
-        _nave.Montar("Escudo", "Deflector liviano de 20 puntos");
+        _nave.Escudo = 5;
+        _nave.Montar("Escudo", "Deflector liviano de 5 puntos");
     }
 
     // Va desarmada: cada kilo se usa para sensores y combustible.

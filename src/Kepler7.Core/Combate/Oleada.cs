@@ -61,6 +61,11 @@ public class Oleada
     /// <summary>La nave del Hangar que acompaña esta oleada, si se armó una.</summary>
     public Nave? NaveDeApoyo { get; private set; }
 
+    /// <summary>Lo que le queda al escudo de la nave de apoyo. Frena los golpes al escuadrón hasta gastarse.</summary>
+    public int EscudoNave { get; private set; }
+
+    public int EscudoNaveMaximo { get; private set; }
+
     /// <summary>Golpes del Enjambre que las defensas del escuadrón frenaron enteros.</summary>
     public int GolpesAbsorbidos { get; private set; }
 
@@ -115,6 +120,12 @@ public class Oleada
             foreach (var enemigo in Campo.EnFila(Bando.Enjambre, Fila.Vanguardia).ToList())
                 enemigo.PerderVida(Math.Min(nave.DanioDeApoyo, enemigo.Vida - 1));
             Bitacora.Registrar("Hangar", $"Disparo de apoyo: {nave.DanioDeApoyo} de daño a la vanguardia enemiga.", TipoEntrada.Exito);
+        }
+
+        if (nave.Escudo > 0)
+        {
+            EscudoNave = EscudoNaveMaximo = nave.Escudo;
+            Bitacora.Registrar("Hangar", $"El escudo de la nave cubre al escuadrón: frena hasta {nave.Escudo} de daño en esta oleada.", TipoEntrada.Exito);
         }
 
         if (nave.BonusCreditos > 0)
@@ -306,12 +317,24 @@ public class Oleada
             case AccionIA.Atacar when decision.Objetivo is { } objetivo:
             {
                 var estadoAnterior = objetivo.Estado;
-                var golpe = new Danio(enemigo.DanioDeAtaque(), TipoDanio.Fisico, enemigo);
+                var danio = enemigo.DanioDeAtaque();
+                var frenado = FrenarConEscudo(objetivo, danio);
+                if (frenado > 0 && frenado == danio)
+                {
+                    var bloqueado = Bitacora.Registrar("Enjambre", $"{enemigo.Nombre} ataca a {objetivo.Nombre}, pero el escudo de la nave frena el golpe", TipoEntrada.Peligro);
+                    AvisarEscudo(objetivo, frenado);
+                    return bloqueado;
+                }
+
+                // Lo que pasó el escudo de la nave sigue por las capas de la unidad.
+                var golpe = new Danio(danio - frenado, TipoDanio.Fisico, enemigo);
                 var vidaQuitada = objetivo.RecibirGolpe(golpe);
                 var texto = !objetivo.EstaViva ? $"{enemigo.Nombre} derriba a {objetivo.Nombre} (-{vidaQuitada})"
                     : vidaQuitada == 0 ? $"{enemigo.Nombre} ataca a {objetivo.Nombre}, pero no le saca vida"
                     : $"{enemigo.Nombre} ataca a {objetivo.Nombre} (-{vidaQuitada})";
                 var entrada = Bitacora.Registrar("Enjambre", texto, TipoEntrada.Peligro);
+                if (frenado > 0)
+                    AvisarEscudo(objetivo, frenado);
                 RegistrarDefensa(objetivo, golpe);
                 RegistrarCambioDeEstado(objetivo, estadoAnterior);
                 return entrada;
@@ -328,6 +351,22 @@ public class Oleada
                     : $"{enemigo.Nombre} está {enemigo.Estado.Nombre.ToLowerInvariant()} y pierde el turno");
         }
     }
+
+    // El escudo de la nave cubre solo a las unidades del escuadrón, no a las barricadas.
+    private int FrenarConEscudo(Unidad objetivo, int danio)
+    {
+        if (EscudoNave == 0 || objetivo is not UnidadEscuadron)
+            return 0;
+
+        var frenado = Math.Min(EscudoNave, danio);
+        EscudoNave -= frenado;
+        return frenado;
+    }
+
+    private void AvisarEscudo(Unidad objetivo, int frenado) =>
+        Bitacora.Registrar("Hangar", EscudoNave > 0
+            ? $"El escudo de la nave frena {frenado} del golpe a {objetivo.Nombre}. Le quedan {EscudoNave}."
+            : $"El escudo de la nave frena {frenado} del golpe a {objetivo.Nombre} y se agota.", TipoEntrada.Exito);
 
     // Si la unidad lleva capas además de la vida, queda en la bitácora cómo las fue atravesando el golpe.
     private void RegistrarDefensa(Unidad objetivo, Danio golpe)

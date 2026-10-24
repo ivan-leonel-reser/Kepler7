@@ -36,6 +36,7 @@ internal class PantallaOleada : Pantalla
     };
     private readonly Button _hackear = Tema.CrearBoton("Hackear IA", 200);
     private readonly Label _estado = Tema.CrearEtiqueta("", Tema.Destacado);
+    private readonly Label _escudoNave = Tema.CrearEtiqueta("", Tema.Negrita, Tema.Acento);
     private readonly Label _ayuda = Tema.CrearEtiqueta("", Tema.Normal, Tema.Texto);
     private readonly Button _mover = Tema.CrearBoton("Cambiar de fila", 330);
     private readonly Button _atacar = Tema.CrearBoton("Atacar", 330);
@@ -87,7 +88,9 @@ internal class PantallaOleada : Pantalla
         var zonaEstado = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 360, Padding = new Padding(14, 20, 0, 0) };
         zonaEstado.Controls.Add(_estado);
         var encabezado = new Panel { Dock = DockStyle.Top, Height = 64, BackColor = Tema.Panel };
-        encabezado.Controls.AddRange([zonaEstado, titulo]);
+        // Lo que le queda al escudo de la nave del Hangar, al lado del título.
+        _escudoNave.Location = new Point(titulo.Left + titulo.PreferredWidth + 36, 24);
+        encabezado.Controls.AddRange([zonaEstado, titulo, _escudoNave]);
 
         _ayuda.MaximumSize = new Size(330, 0);
         _ayuda.Margin = new Padding(3, 4, 3, 10);
@@ -383,6 +386,10 @@ internal class PantallaOleada : Pantalla
             _ => ("DERROTA", Tema.Peligro),
         };
         _ayuda.Text = Ayuda(actor);
+        _escudoNave.Visible = _oleada.EscudoNaveMaximo > 0;
+        (_escudoNave.Text, _escudoNave.ForeColor) = _oleada.EscudoNave > 0
+            ? ($"ESCUDO DE LA NAVE {_oleada.EscudoNave}/{_oleada.EscudoNaveMaximo}", Tema.Acento)
+            : ("ESCUDO DE LA NAVE AGOTADO", Tema.TextoTenue);
 
         Llenar(_accionesTurno, _oleada.Comandos.AccionesDelTurno.Select(c => c.Descripcion));
         Llenar(_historial, _oleada.Comandos.Historial.Reverse());
