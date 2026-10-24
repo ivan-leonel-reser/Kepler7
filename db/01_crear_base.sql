@@ -46,3 +46,17 @@ CREATE TABLE dbo.IntentoAcceso (
     IdArchivo NVARCHAR(80) NOT NULL
 );
 GO
+
+-- Historial: una fila por partida terminada, ganada o perdida. Tampoco se borra con la partida.
+IF OBJECT_ID(N'dbo.PartidaJugada', N'U') IS NULL
+CREATE TABLE dbo.PartidaJugada (
+    Id INT IDENTITY(1, 1) NOT NULL
+        CONSTRAINT PK_PartidaJugada PRIMARY KEY,
+    Fecha DATETIME2 NOT NULL,
+    EstacionSalvada BIT NOT NULL,
+    OleadasSuperadas INT NOT NULL,
+    Nivel INT NOT NULL,
+    Xp INT NOT NULL,
+    Insignias INT NOT NULL
+);
+GO

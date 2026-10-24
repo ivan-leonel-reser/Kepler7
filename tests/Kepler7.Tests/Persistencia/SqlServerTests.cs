@@ -107,6 +107,25 @@ public class SqlServerTests
     }
 
     [TestMethod]
+    public void ElHistorialGuardaLaPartidaYLaDevuelvePrimero()
+    {
+        var historial = new HistorialPartidasSql(Conexion);
+        // Una fecha posterior a cualquier otra corrida, para que quede primera.
+        var partida = new PartidaJugada(DateTime.Now.AddYears(1), true, 6, 7, 640, 9);
+
+        historial.Registrar(partida);
+        var ultimas = historial.Ultimas(3);
+
+        Assert.IsLessThanOrEqualTo(3, ultimas.Count);
+        var primera = ultimas[0];
+        Assert.IsTrue(primera.EstacionSalvada);
+        Assert.AreEqual(6, primera.OleadasSuperadas);
+        Assert.AreEqual(7, primera.Nivel);
+        Assert.AreEqual(640, primera.Xp);
+        Assert.AreEqual(9, primera.Insignias);
+    }
+
+    [TestMethod]
     public void UnServidorInexistenteAvisaConUnErrorDePersistencia()
     {
         var conexion = new ConexionSql("Server=np:\\\\.\\pipe\\no-existe\\sql\\query;Database=Kepler7;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=1");
