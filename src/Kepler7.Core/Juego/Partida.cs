@@ -25,6 +25,7 @@ public class Partida
     public const int CostoClon = 80;
 
     private readonly IRepositorioProgreso _repositorio;
+    private readonly IHistorialPartidas _historial;
     private readonly IngenieroJefe _ingeniero = new();
     private readonly HashSet<string> _recetasUsadas = [];
     private readonly HashSet<string> _analizadoresUsados = [];
@@ -38,10 +39,13 @@ public class Partida
     private UnidadEscuadron? _unidadRecluta;
     private UnidadEscuadron? _unidadClon;
     private bool _clonModificado;
+    private bool _anotadaEnHistorial;
 
-    public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
+    public Partida(IRepositorioProgreso repositorio, ProgresoJugador progreso, IAleatorio aleatorio,
+        IRegistroAccesos? registroAccesos = null, IHistorialPartidas? historial = null)
     {
         _repositorio = repositorio;
+        _historial = historial ?? Repositorios.CrearHistorial();
         Progreso = progreso;
         Aleatorio = aleatorio;
         ControlCentral = new ControlCentral(Bitacora);
@@ -108,22 +112,24 @@ public class Partida
     public bool PuedeDefender =>
         !Terminada && !Progreso.EstacionSalvada && ControlCentral.Modo == ModoEstacion.Operativa;
 
-    public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
+    public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio,
+        IRegistroAccesos? registroAccesos = null, IHistorialPartidas? historial = null)
     {
         repositorio.Borrar();
-        var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio, registroAccesos);
+        var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio, registroAccesos, historial);
         partida.Bitacora.Registrar("Consejo", "El Enjambre va a atacar Kepler-7 en 6 oleadas. Prepará al escuadrón y defendé la estación.", TipoEntrada.Advertencia);
         partida.AvisarEstacionApagada();
         partida.Guardar();
         return partida;
     }
 
-    public static Partida Continuar(IRepositorioProgreso repositorio, IAleatorio aleatorio, IRegistroAccesos? registroAccesos = null)
+    public static Partida Continuar(IRepositorioProgreso repositorio, IAleatorio aleatorio,
+        IRegistroAccesos? registroAccesos = null, IHistorialPartidas? historial = null)
     {
         var progreso = repositorio.Cargar()
             ?? throw new InvalidOperationException("No hay una partida guardada.");
 
-        var partida = new Partida(repositorio, progreso, aleatorio, registroAccesos);
+        var partida = new Partida(repositorio, progreso, aleatorio, registroAccesos, historial);
         partida.Bitacora.Registrar("Consejo", $"Bienvenido de nuevo, Comandante. Oleadas superadas: {progreso.OleadasSuperadas} de {ProgresoJugador.OleadasTotales}.");
         partida.AvisarEstacionApagada();
         return partida;
@@ -382,6 +388,7 @@ public class Partida
             Terminada = true;
             _repositorio.Borrar();
             _oleadasJugadas.Add(Registrar(oleada, 0, 0));
+            AnotarEnHistorial();
             return new ResultadoOleada(false, 0, 0, false, apagado);
         }
 
@@ -404,7 +411,10 @@ public class Partida
         Bitacora.Registrar("Oleada", $"Oleada {oleada.Numero} superada: +{xp} XP, +{creditos} créditos.", TipoEntrada.Exito);
         Bitacora.Registrar("Almacén", $"Botín de la oleada: {string.Join(", ", botin.Select(i => i.Nombre))}.", TipoEntrada.Exito);
         if (Progreso.EstacionSalvada)
+        {
             Bitacora.Registrar("Consejo", "Kepler-7 resistió las 6 oleadas. La estación está a salvo.", TipoEntrada.Exito);
+            AnotarEnHistorial();
+        }
 
         Guardar();
         return new ResultadoOleada(true, xp, creditos, subioNivel, normalidad);
@@ -503,6 +513,26 @@ public class Partida
             oleada.HackeosRealizados,
             xp,
             creditos);
+    }
+
+    // Se anota una sola vez, cuando la partida termina. Si la base falla, queda el aviso y se sigue.
+    private void AnotarEnHistorial()
+    {
+        if (_anotadaEnHistorial)
+            return;
+
+        var jugada = new PartidaJugada(DateTime.Now, Progreso.EstacionSalvada, Progreso.OleadasSuperadas,
+            Progreso.Nivel, Progreso.Xp, Progreso.Insignias.Count);
+        try
+        {
+            _historial.Registrar(jugada);
+            _anotadaEnHistorial = true;
+            Bitacora.Registrar("Historial", "La partida quedó anotada en el historial.");
+        }
+        catch (ErrorDePersistencia e)
+        {
+            Bitacora.Registrar("Historial", $"No se pudo anotar la partida en el historial: {e.Message}", TipoEntrada.Peligro);
+        }
     }
 
     // Al subir de nivel se anuncia qué se desbloqueó, si hubo algo nuevo.

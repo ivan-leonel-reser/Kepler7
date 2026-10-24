@@ -1,6 +1,7 @@
 using Kepler7.BE;
 using Kepler7.DAL;
 using Kepler7.DAL.SqlServer;
+using Microsoft.Data.SqlClient;
 
 namespace Kepler7.Tests.Persistencia;
 
@@ -104,6 +105,27 @@ public class SqlServerTests
 
         Assert.HasCount(antes + 1, todos);
         Assert.AreEqual(intento, todos[^1]);
+    }
+
+    [TestMethod]
+    public void ElHistorialDevuelveLasPartidasDeLaMasNuevaALaMasVieja()
+    {
+        // El historial no se borra con la partida: para la prueba se vacía la tabla a mano.
+        using (var conexion = Conexion.Abrir())
+        using (var limpiar = new SqlCommand("DELETE FROM dbo.PartidaJugada", conexion))
+            limpiar.ExecuteNonQuery();
+        var historial = new HistorialPartidasSql(Conexion);
+        var perdida = new PartidaJugada(new DateTime(2026, 10, 20, 21, 15, 0), false, 3, 3, 260, 4);
+        var ganada = new PartidaJugada(new DateTime(2026, 10, 22, 19, 40, 0), true, 6, 7, 640, 9);
+
+        historial.Registrar(perdida);
+        historial.Registrar(ganada);
+        var ultimas = historial.Ultimas(10);
+
+        Assert.HasCount(2, ultimas);
+        Assert.AreEqual(ganada, ultimas[0]);
+        Assert.AreEqual(perdida, ultimas[1]);
+        Assert.HasCount(1, historial.Ultimas(1));
     }
 
     [TestMethod]
