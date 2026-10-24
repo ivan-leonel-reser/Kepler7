@@ -36,13 +36,15 @@ Hay tutorial, XP, niveles con desbloqueos, créditos, doce insignias (una por pa
 - Para compilar: .NET 8 SDK (o superior)
 - SQL Server LocalDB (viene con Visual Studio) o SQL Server Express, para guardar el progreso. Sin servidor el juego funciona igual, con el progreso en memoria
 
-## Instalar el ejecutable
+## Instalar
 
-1. Descargar el `.zip` de la última versión desde [Releases](https://github.com/ivan-leonel-reser/Kepler7/releases).
-2. Descomprimirlo en cualquier carpeta.
-3. Ejecutar `Kepler7.Game.exe`. No hace falta Visual Studio.
+1. Descargar `Kepler7-Setup-1.0.0.exe` de la última versión desde [Releases](https://github.com/ivan-leonel-reser/Kepler7/releases).
+2. Ejecutarlo y seguir los pasos. Se instala para el usuario actual, sin permisos de administrador, y crea los accesos directos en el menú Inicio y en el escritorio.
+3. Abrir Kepler-7 desde el menú Inicio. No hace falta Visual Studio.
 
-Si Windows pregunta por el runtime, instalar el .NET 8 Desktop Runtime del enlace de arriba.
+El instalador avisa si falta el .NET 8 Desktop Runtime y ofrece abrir la página de descarga. El paso a paso con capturas, la configuración de la base y la desinstalación están en el manual de instalación (PDF), que se descarga de la misma página y también queda en el menú Inicio.
+
+Sin instalador: descargar el `.zip` de la misma versión, descomprimirlo en cualquier carpeta y ejecutar `Kepler7.Game.exe`.
 
 ## Compilar y ejecutar desde el código
 
@@ -57,6 +59,14 @@ Para generar el ejecutable de distribución:
 ```bash
 dotnet publish src/Kepler7.Game -c Release -r win-x64 --self-contained false -o publicar
 ```
+
+El instalador se arma con [Inno Setup 6](https://jrsoftware.org/isinfo.php) a partir de esa carpeta (`ISCC.exe` está en la carpeta donde se instaló Inno Setup):
+
+```bash
+ISCC instalador/Kepler7.iss
+```
+
+Queda en `instalador/salida`. Si en `publicar` hay un archivo `Manual de instalacion.pdf`, el instalador lo incluye y le crea un acceso directo.
 
 ## Persistencia
 
@@ -85,7 +95,7 @@ La solución está organizada en cinco capas:
 | `src/Kepler7.Core` | Lógica de negocio | Reglas del juego y los 12 patrones de diseño, sin dependencias de UI |
 | `src/Kepler7.Game` | Interfaz | Windows Forms: dibuja, captura la entrada y llama a Core |
 
-Además están `tests/Kepler7.Tests` (pruebas automatizadas, incluidas las de dependencias entre capas) y `db/` (script de creación de la base).
+Además están `tests/Kepler7.Tests` (pruebas automatizadas, incluidas las de dependencias entre capas), `db/` (script de creación de la base) e `instalador/` (script de Inno Setup).
 
 Dependencias entre capas, tal como las declaran los `ProjectReference`:
 

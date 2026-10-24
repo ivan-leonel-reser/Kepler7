@@ -1,5 +1,6 @@
 using Kepler7.BE;
 using Kepler7.Core.Juego;
+using Kepler7.Game.Controles;
 using Kepler7.Game.Pantallas;
 using Kepler7.Services;
 
@@ -75,6 +76,11 @@ public partial class FormPrincipal : Form
 
     internal void Mostrar(Pantalla pantalla)
     {
+        foreach (var vieja in Controls.OfType<Transicion>().ToList())
+            vieja.Terminar();
+        // Sin foto no hay fundido: pasa con la primera pantalla o con la ventana minimizada.
+        var anterior = Transicion.Fotografiar(_pantallaActual);
+
         SuspendLayout();
         if (_pantallaActual is not null)
         {
@@ -85,6 +91,14 @@ public partial class FormPrincipal : Form
         _pantallaActual = pantalla;
         Controls.Add(pantalla);
         ResumeLayout();
+
+        if (anterior is not null)
+        {
+            var transicion = new Transicion(anterior, pantalla);
+            Controls.Add(transicion);
+            transicion.BringToFront();
+            transicion.Empezar();
+        }
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)

@@ -24,6 +24,7 @@ internal class PantallaTutorial : Pantalla
 
     public PantallaTutorial(FormPrincipal principal, Action alTerminar) : base(principal)
     {
+        ConCielo = true;
         _alTerminar = alTerminar;
 
         _titulo.Margin = new Padding(3, 0, 3, 14);

@@ -7,6 +7,7 @@ internal class PantallaInicio : Pantalla
 {
     public PantallaInicio(FormPrincipal principal) : base(principal)
     {
+        ConCielo = true;
         var titulo = Tema.CrearEtiqueta(InfoJuego.Titulo, Tema.Titulo, Tema.Acento);
         var subtitulo = Tema.CrearEtiqueta("Estación Orbital Kepler-7 · Sistema de control central", Tema.Subtitulo, Tema.TextoTenue);
         subtitulo.Margin = new Padding(6, 0, 3, 28);
