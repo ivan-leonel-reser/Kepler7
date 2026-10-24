@@ -20,6 +20,9 @@ public static class Repositorios
     // El registro de la bóveda es uno solo para toda la estación.
     public static IRegistroAccesos CrearRegistroAccesos() => Elegido.Value.Accesos;
 
+    // El historial también es uno solo: junta todas las partidas que se terminaron en esta máquina.
+    public static IHistorialPartidas CrearHistorial() => Elegido.Value.Historial;
+
     public static bool UsaSqlServer => Elegido.Value.Sql;
 
     /// <summary>Dónde se está guardando, para decírselo al jugador.</summary>
@@ -43,7 +46,7 @@ public static class Repositorios
         {
             var conexion = new ConexionSql(cadena);
             conexion.AsegurarBase();
-            return new Almacenamiento(new RepositorioProgresoSql(conexion), new RegistroAccesosSql(conexion), true,
+            return new Almacenamiento(new RepositorioProgresoSql(conexion), new RegistroAccesosSql(conexion), new HistorialPartidasSql(conexion), true,
                 $"SQL Server · {conexion.Servidor} · base {conexion.Base}");
         }
         catch (ErrorDePersistencia e)
@@ -57,8 +60,8 @@ public static class Repositorios
     }
 
     private static Almacenamiento EnMemoria(string motivo) =>
-        new(new RepositorioProgresoEnMemoria(), new RegistroAccesosEnMemoria(), false,
+        new(new RepositorioProgresoEnMemoria(), new RegistroAccesosEnMemoria(), new HistorialPartidasEnMemoria(), false,
             $"En memoria, se pierde al cerrar el juego: {motivo}");
 
-    private sealed record Almacenamiento(IRepositorioProgreso Progreso, IRegistroAccesos Accesos, bool Sql, string Descripcion);
+    private sealed record Almacenamiento(IRepositorioProgreso Progreso, IRegistroAccesos Accesos, IHistorialPartidas Historial, bool Sql, string Descripcion);
 }
