@@ -1,3 +1,5 @@
+using Kepler7.Game.Controles;
+
 namespace Kepler7.Game.Pantallas;
 
 /// <summary>Base de todas las pantallas: ocupan toda la ventana y conocen al formulario principal.</summary>
@@ -14,6 +16,17 @@ internal class Pantalla : UserControl
     }
 
     protected FormPrincipal Principal { get; }
+
+    /// <summary>Si la pantalla lleva de fondo el cielo de estrellas.</summary>
+    protected bool ConCielo { get; set; }
+
+    // Se dibuja en el fondo para que las etiquetas transparentes también lo muestren.
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        base.OnPaintBackground(e);
+        if (ConCielo)
+            Cielo.Dibujar(e.Graphics, ClientSize);
+    }
 
     /// <summary>Mantiene un control centrado cuando cambia el tamaño de la pantalla.</summary>
     protected void MantenerCentrado(Control control)

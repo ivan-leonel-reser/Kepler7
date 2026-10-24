@@ -9,6 +9,7 @@ internal class PantallaFinal : Pantalla
 {
     public PantallaFinal(FormPrincipal principal, ResumenPartida resumen, bool victoria) : base(principal)
     {
+        ConCielo = true;
         var titulo = Tema.CrearEtiqueta(victoria ? "Kepler-7 está a salvo" : "Kepler-7 se apagó", Tema.Titulo, victoria ? Tema.Exito : Tema.Peligro);
         var subtitulo = Tema.CrearEtiqueta(victoria
             ? $"El escuadrón resistió las {ProgresoJugador.OleadasTotales} oleadas del Enjambre. La estación sigue en pie."
