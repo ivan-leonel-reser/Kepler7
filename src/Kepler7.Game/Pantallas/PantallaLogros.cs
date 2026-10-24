@@ -14,7 +14,7 @@ internal class PantallaLogros : Pantalla
             ?? throw new InvalidOperationException("No hay una partida en curso.");
         var progreso = partida.Progreso;
 
-        Controls.Add(CrearGrilla(progreso));
+        Controls.Add(CrearGrilla(partida));
         Controls.Add(CrearDesbloqueos(progreso));
         Controls.Add(CrearEncabezado(progreso));
     }
@@ -38,7 +38,7 @@ internal class PantallaLogros : Pantalla
         return encabezado;
     }
 
-    private static Control CrearGrilla(ProgresoJugador progreso)
+    private static Control CrearGrilla(Partida partida)
     {
         const int columnas = 4;
         var insignias = CatalogoInsignias.Todas;
@@ -56,7 +56,7 @@ internal class PantallaLogros : Pantalla
             grilla.RowStyles.Add(new RowStyle(SizeType.Percent, 100f / filas));
 
         foreach (var insignia in insignias)
-            grilla.Controls.Add(new TarjetaInsignia(insignia, progreso.TieneInsignia(insignia.Patron)));
+            grilla.Controls.Add(new TarjetaInsignia(insignia, partida.Progreso.TieneInsignia(insignia.Patron), partida.AvanceDe(insignia.Patron)));
         return grilla;
     }
 

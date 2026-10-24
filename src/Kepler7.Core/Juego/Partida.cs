@@ -428,21 +428,21 @@ public class Partida
         var avance = patron switch
         {
             Patron.Builder => new AvanceInsignia(_recetasUsadas.Count, CatalogoRecetas.Crear().Count, "recetas usadas"),
-            Patron.Prototype => Uno(_clonModificado, "clon con habilidades cambiadas"),
+            Patron.Prototype => Uno(_clonModificado, "clon modificado"),
             Patron.Bridge => new AvanceInsignia(_cifradosUsados.Count, CatalogoComunicaciones.Cifrados.Count, "cifrados usados"),
             Patron.Facade => new AvanceInsignia(
                 new[] { ControlCentral.TurnosIniciados, ControlCentral.EmergenciasDeclaradas, ControlCentral.VecesApagada }.Count(n => n > 0),
-                3, "operaciones del Control Central"),
+                3, "operaciones usadas"),
             Patron.Flyweight => Uno(Recluta is not null, "recluta del censo"),
-            Patron.Proxy => Uno(Boveda.AccesosConcedidos > 0, "acceso autorizado a la bóveda"),
-            Patron.ChainOfResponsibility => Uno(oleada is { GolpesAbsorbidos: > 0 }, "golpe absorbido entero"),
+            Patron.Proxy => Uno(Boveda.AccesosConcedidos > 0, "acceso autorizado"),
+            Patron.ChainOfResponsibility => Uno(oleada is { GolpesAbsorbidos: > 0 }, "golpe absorbido"),
             Patron.Command => new AvanceInsignia(
                 (oleada is { Comandos.VecesDeshecho: > 0 } ? 1 : 0) + (oleada is { Comandos.VecesRehecho: > 0 } ? 1 : 0),
-                2, "deshacer y rehacer en la oleada"),
+                2, "deshacer y rehacer"),
             Patron.Visitor => new AvanceInsignia(_analizadoresUsados.Count, CatalogoVisitantes.Crear().Count, "analizadores usados"),
-            Patron.State => Uno(oleada is { Estado: EstadoOleada.Victoria } && oleada.SobrevivientesConEstado.Any(), "oleada ganada con un estado"),
-            Patron.TemplateMethod => new AvanceInsignia(oleada?.ClasesQueJugaron.Count ?? 0, Enum.GetValues<ClaseUnidad>().Length, "clases que jugaron en la oleada"),
-            Patron.Strategy => Uno(oleada is { HackeosRealizados: > 0 }, "hackeo en la oleada"),
+            Patron.State => Uno(oleada is { Estado: EstadoOleada.Victoria } && oleada.SobrevivientesConEstado.Any(), "victoria con estado"),
+            Patron.TemplateMethod => new AvanceInsignia(oleada?.ClasesQueJugaron.Count ?? 0, Enum.GetValues<ClaseUnidad>().Length, "clases en la oleada"),
+            Patron.Strategy => Uno(oleada is { HackeosRealizados: > 0 }, "hackeo hecho"),
             _ => throw new ArgumentOutOfRangeException(nameof(patron)),
         };
         // Una insignia ganada no se pierde aunque la oleada siguiente arranque de cero.
