@@ -53,9 +53,16 @@ public class Nave
                 ayudas.Add("revela la IA de los enemigos");
             if (DanioDeApoyo > 0)
                 ayudas.Add($"dispara {DanioDeApoyo} de daño a la vanguardia enemiga");
+            if (Escudo > 0)
+                ayudas.Add($"cubre al escuadrón con {Escudo} de escudo");
             if (BonusCreditos > 0)
                 ayudas.Add($"trae {BonusCreditos}% más de créditos");
-            return ayudas.Count > 0 ? string.Join(" y ", ayudas) : "no da apoyo";
+            return ayudas.Count switch
+            {
+                0 => "no da apoyo",
+                1 => ayudas[0],
+                _ => string.Join(", ", ayudas[..^1]) + " y " + ayudas[^1],
+            };
         }
     }
 
