@@ -13,10 +13,8 @@ public class RepositorioProgresoSql : IRepositorioProgreso
         _conexion = conexion;
     }
 
-    public ProgresoJugador? Cargar()
+    public ProgresoJugador? Cargar() => _conexion.Usar(conexion =>
     {
-        using var conexion = _conexion.Abrir();
-
         int xp, creditos, oleadas;
         using (var comando = new SqlCommand("SELECT Xp, Creditos, OleadasSuperadas FROM dbo.Progreso WHERE Id = 1", conexion))
         using (var lector = comando.ExecuteReader())
@@ -40,12 +38,11 @@ public class RepositorioProgresoSql : IRepositorioProgreso
         }
 
         return ProgresoJugador.Restaurar(xp, creditos, oleadas, insignias);
-    }
+    });
 
     // Todo en una transacción: o queda la partida entera o no cambia nada.
-    public void Guardar(ProgresoJugador progreso)
+    public void Guardar(ProgresoJugador progreso) => _conexion.Usar(conexion =>
     {
-        using var conexion = _conexion.Abrir();
         using var transaccion = conexion.BeginTransaction();
 
         using (var comando = new SqlCommand(
@@ -71,12 +68,11 @@ public class RepositorioProgresoSql : IRepositorioProgreso
         }
 
         transaccion.Commit();
-    }
+    });
 
-    public void Borrar()
+    public void Borrar() => _conexion.Usar(conexion =>
     {
-        using var conexion = _conexion.Abrir();
         using var comando = new SqlCommand("DELETE FROM dbo.Insignia; DELETE FROM dbo.Progreso;", conexion);
         comando.ExecuteNonQuery();
-    }
+    });
 }
