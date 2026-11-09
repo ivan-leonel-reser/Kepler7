@@ -110,7 +110,7 @@ internal class PantallaLaboratorio : PantallaModulo
 
     private Control ArmarConsola()
     {
-        var zona = new Panel { Dock = DockStyle.Bottom, Height = 112, Padding = new Padding(0, 6, 0, 0) };
+        var zona = new Panel { Dock = DockStyle.Bottom, Height = 84, Padding = new Padding(0, 6, 0, 0) };
         zona.Controls.Add(_consola);
         return zona;
     }
