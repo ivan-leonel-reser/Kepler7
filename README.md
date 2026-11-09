@@ -42,7 +42,7 @@ Hay tutorial, XP, niveles con desbloqueos, créditos, doce insignias (una por pa
 2. Ejecutarlo y seguir los pasos. Se instala para el usuario actual, sin permisos de administrador, y crea los accesos directos en el menú Inicio y en el escritorio.
 3. Abrir Kepler-7 desde el menú Inicio. No hace falta Visual Studio.
 
-El instalador avisa si falta el .NET 8 Desktop Runtime y ofrece abrir la página de descarga. El paso a paso con capturas, la configuración de la base y la desinstalación están en el manual de instalación (PDF), que se descarga de la misma página y también queda en el menú Inicio.
+El instalador avisa si falta el .NET 8 Desktop Runtime y ofrece abrir la página de descarga. También avisa, en una página del asistente, si el equipo no tiene SQL Server LocalDB: se puede seguir igual y el juego funciona, sin guardar el progreso hasta que haya un servidor. El paso a paso con capturas, la configuración de la base y la desinstalación están en el manual de instalación (PDF), que se descarga de la misma página y también queda en el menú Inicio.
 
 Sin instalador: descargar el `.zip` de la misma versión, descomprimirlo en cualquier carpeta y ejecutar `Kepler7.Game.exe`.
 
