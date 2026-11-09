@@ -59,6 +59,9 @@ Filename: "{app}\{#Ejecutable}"; Description: "{cm:LaunchProgram,{#NombreCorto}}
 [Code]
 const
   PaginaRuntime = 'https://dotnet.microsoft.com/es-es/download/dotnet/8.0';
+  PaginaLocalDB = 'https://learn.microsoft.com/es-es/sql/database-engine/configure-windows/sql-server-express-localdb';
+  ClaveLocalDB = 'SOFTWARE\Microsoft\Microsoft SQL Server Local DB\Installed Versions';
+  ClaveInstancias = 'SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL';
 
 // El runtime de escritorio queda en Archivos de programa\dotnet\shared, una carpeta por versión.
 function TieneRuntime: Boolean;
@@ -80,4 +83,60 @@ begin
         '¿Abrir la página de descarga de Microsoft? La instalación de Kepler-7 sigue igual.',
         mbConfirmation, MB_YESNO, IDNO) = IDYES then
       ShellExec('open', PaginaRuntime, '', '', SW_SHOWNORMAL, ewNoWait, Codigo);
+end;
+
+// LocalDB anota cada versión instalada como una subclave: alcanza con que haya una.
+function TieneLocalDB: Boolean;
+var
+  Versiones: TArrayOfString;
+begin
+  Result := RegGetSubkeyNames(HKLM64, ClaveLocalDB, Versiones) and (GetArrayLength(Versiones) > 0);
+end;
+
+// Un SQL Server común (Express o superior) figura con el nombre de su instancia.
+function TieneOtroSqlServer: Boolean;
+var
+  Instancias: TArrayOfString;
+begin
+  Result := (RegGetValueNames(HKLM64, ClaveInstancias, Instancias) and (GetArrayLength(Instancias) > 0))
+    or (RegGetValueNames(HKLM32, ClaveInstancias, Instancias) and (GetArrayLength(Instancias) > 0));
+end;
+
+procedure AbrirPaginaLocalDB(Sender: TObject);
+var
+  Codigo: Integer;
+begin
+  ShellExec('open', PaginaLocalDB, '', '', SW_SHOWNORMAL, ewNoWait, Codigo);
+end;
+
+// El juego viene configurado para LocalDB. Si no está, se instala igual, pero se avisa
+// en una página propia que sin SQL Server el progreso no se guarda y cómo se resuelve.
+procedure InitializeWizard;
+var
+  Pagina: TOutputMsgWizardPage;
+  Boton: TNewButton;
+  Texto: String;
+begin
+  if TieneLocalDB then
+    Exit;
+
+  if TieneOtroSqlServer then
+    Texto := 'Kepler-7 viene configurado para SQL Server Express LocalDB, que en este equipo no está instalado. Sí hay otro SQL Server.' + #13#10#13#10 +
+      'El juego se instala y se puede jugar igual. Hasta que se conecte a un servidor, la partida queda en memoria y se pierde al cerrarlo; la pantalla de inicio lo avisa.' + #13#10#13#10 +
+      'Para que el progreso se conserve hay dos caminos: instalar LocalDB, o indicar el servidor que ya existe en el archivo appsettings.json de la carpeta del juego. Los dos están explicados en la sección 6 del manual de instalación.'
+  else
+    Texto := 'Kepler-7 guarda el progreso en SQL Server y en este equipo no hay ninguno instalado.' + #13#10#13#10 +
+      'El juego se instala y se puede jugar igual. Mientras falte, la partida queda en memoria y se pierde al cerrarlo; la pantalla de inicio lo avisa.' + #13#10#13#10 +
+      'Para que el progreso se conserve hace falta SQL Server Express LocalDB, gratuito y distribuido por Microsoft. Se puede instalar ahora o más adelante: la próxima vez que se abra, el juego lo detecta y crea la base solo. Los pasos están en la sección 6 del manual de instalación.';
+
+  Pagina := CreateOutputMsgPage(wpWelcome, 'Base de datos',
+    'No se encontró SQL Server Express LocalDB en este equipo', Texto);
+
+  Boton := TNewButton.Create(Pagina);
+  Boton.Parent := Pagina.Surface;
+  Boton.Caption := 'Abrir la página de Microsoft sobre LocalDB';
+  Boton.Width := ScaleX(270);
+  Boton.Height := ScaleY(25);
+  Boton.Top := Pagina.SurfaceHeight - Boton.Height;
+  Boton.OnClick := @AbrirPaginaLocalDB;
 end;
