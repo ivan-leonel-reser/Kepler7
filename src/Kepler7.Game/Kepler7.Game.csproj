@@ -6,6 +6,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- Las pantallas están armadas en píxeles: con la escala de Windows al 125 % o 150 % la agranda Windows entera. -->
+    <ApplicationHighDpiMode>DpiUnaware</ApplicationHighDpiMode>
     <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 

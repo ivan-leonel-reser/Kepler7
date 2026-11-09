@@ -19,9 +19,14 @@ public partial class FormPrincipal : Form
 
         Text = InfoJuego.Titulo;
         ClientSize = new Size(1180, 740);
-        MinimumSize = new Size(1100, 750);
+        MinimumSize = new Size(Width, 680);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Tema.Fondo;
+
+        // En una pantalla de 1366x768 la ventana no entra: arranca maximizada para que no queden botones tapados.
+        var disponible = Screen.FromPoint(Cursor.Position).WorkingArea;
+        if (Width > disponible.Width || Height > disponible.Height)
+            WindowState = FormWindowState.Maximized;
 
         Mostrar(new PantallaInicio(this));
     }
