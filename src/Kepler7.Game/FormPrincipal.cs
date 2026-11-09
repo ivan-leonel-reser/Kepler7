@@ -56,7 +56,8 @@ public partial class FormPrincipal : Form
         MostrarTutorial(IrAEstacion);
     }
 
-    internal void MostrarTutorial(Action alTerminar) => Mostrar(new PantallaTutorial(this, alTerminar));
+    internal void MostrarTutorial(Action alTerminar, string textoFinal = "Empezar") =>
+        Mostrar(new PantallaTutorial(this, alTerminar, textoFinal));
 
     internal void ContinuarPartida()
     {

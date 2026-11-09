@@ -38,7 +38,8 @@ internal class PantallaHistorial : Pantalla
         if (partidas.Count > 0)
         {
             var salvadas = partidas.Count(p => p.EstacionSalvada);
-            columna.Controls.Add(Aviso($"Últimas {partidas.Count} partidas · {salvadas} con la estación salvada", Tema.Texto));
+            var cuantas = partidas.Count == 1 ? "Última partida" : $"Últimas {partidas.Count} partidas";
+            columna.Controls.Add(Aviso($"{cuantas} · {salvadas} con la estación salvada", Tema.Texto));
             columna.Controls.Add(CrearTabla(partidas));
         }
         else if (columna.Controls.Count == 1)

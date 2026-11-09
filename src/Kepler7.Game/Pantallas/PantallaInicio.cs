@@ -24,7 +24,7 @@ internal class PantallaInicio : Pantalla
         continuar.Click += (_, _) => Principal.ContinuarPartida();
 
         var comoSeJuega = Tema.CrearBoton("Cómo se juega");
-        comoSeJuega.Click += (_, _) => Principal.MostrarTutorial(Principal.IrAInicio);
+        comoSeJuega.Click += (_, _) => Principal.MostrarTutorial(Principal.IrAInicio, "Volver al menú");
 
         var historial = Tema.CrearBoton("Historial de partidas");
         historial.Click += (_, _) => Principal.Mostrar(new PantallaHistorial(Principal));
@@ -50,9 +50,13 @@ internal class PantallaInicio : Pantalla
         };
         columna.Controls.AddRange([titulo, subtitulo, equipo, integrantes, nueva, continuar, comoSeJuega, historial, sonido, salir]);
 
-        // Dónde se guarda la partida. Si SQL Server no responde, acá se entera el jugador.
-        var guardado = Tema.CrearEtiqueta($"Guardado: {Repositorios.Descripcion}", Tema.Chica,
-            Repositorios.UsaSqlServer ? Tema.TextoTenue : Tema.Advertencia);
+        // Dónde se guarda la partida. Si SQL Server no responde, acá se entera el jugador;
+        // el motivo completo es largo y queda en el historial.
+        var guardado = Tema.CrearEtiqueta(
+            Repositorios.UsaSqlServer
+                ? $"Guardado: {Repositorios.Descripcion}"
+                : "Guardado: en memoria, se pierde al cerrar el juego. El motivo está en Historial de partidas.",
+            Tema.Chica, Repositorios.UsaSqlServer ? Tema.TextoTenue : Tema.Advertencia);
         guardado.Dock = DockStyle.Bottom;
         guardado.AutoSize = false;
         guardado.Height = 40;
