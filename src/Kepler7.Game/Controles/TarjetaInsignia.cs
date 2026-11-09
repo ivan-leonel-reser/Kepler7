@@ -1,4 +1,5 @@
 using Kepler7.BE;
+using Kepler7.Core.Juego;
 using Kepler7.Core.Progreso;
 
 namespace Kepler7.Game.Controles;
@@ -34,7 +35,7 @@ internal class TarjetaInsignia : Control
 
         TextRenderer.DrawText(g, _insignia.Nombre, Tema.Negrita, new Rectangle(14, 12, Width - 28, 24),
             _obtenida ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
-        TextRenderer.DrawText(g, $"{ModulosEstacion.NombrePatron(_insignia.Patron).ToUpperInvariant()} · {_insignia.Familia.ToString().ToUpperInvariant()}",
+        TextRenderer.DrawText(g, $"{NombresVisibles.De(_insignia.Patron).ToUpperInvariant()} · {_insignia.Familia.ToString().ToUpperInvariant()}",
             Tema.Chica, new Rectangle(16, 38, Width - 32, 16), _obtenida ? Tema.Acento : Tema.TextoTenue, TextFormatFlags.EndEllipsis);
         TextRenderer.DrawText(g, _insignia.Descripcion, Tema.Normal,
             new Rectangle(16, 60, Width - 32, Height - 104), _obtenida ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.WordBreak);

@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using Kepler7.Core.Combate;
+using Kepler7.Core.Juego;
 using Kepler7.Core.Patrones.Comportamiento.State;
 
 namespace Kepler7.Game.Controles;
@@ -233,7 +234,7 @@ internal class VistaCampo : Control
 
     private static string Detalle(Unidad unidad) => unidad switch
     {
-        UnidadEscuadron u => $"{u.Clase} · atq {u.Ataque}",
+        UnidadEscuadron u => $"{NombresVisibles.De(u.Clase)} · atq {u.Ataque}",
         Barricada => "No ataca, cubre",
         _ => $"Atq {unidad.Ataque}" + (unidad.AtacaADistancia ? " · a distancia" : ""),
     };

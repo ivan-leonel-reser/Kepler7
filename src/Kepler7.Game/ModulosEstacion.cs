@@ -25,11 +25,4 @@ internal static class ModulosEstacion
         new("Armería", Patron.ChainOfResponsibility, "Ordená las capas de defensa del escuadrón.", p => new PantallaArmeria(p)),
         new("Control Central", Patron.Facade, "Operá los seis subsistemas con una sola orden.", p => new PantallaControlCentral(p)),
     ];
-
-    public static string NombrePatron(Patron patron) => patron switch
-    {
-        Patron.ChainOfResponsibility => "Chain of Responsibility",
-        Patron.TemplateMethod => "Template Method",
-        _ => patron.ToString(),
-    };
 }

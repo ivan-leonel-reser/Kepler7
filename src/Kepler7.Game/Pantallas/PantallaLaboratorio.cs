@@ -204,7 +204,7 @@ internal class PantallaLaboratorio : PantallaModulo
             :
             [
                 soldado.Nombre,
-                soldado.Clase.ToString(),
+                NombresVisibles.De(soldado.Clase),
                 soldado.Especie?.Nombre ?? "No figura en el censo",
                 $"{unidad.VidaMaxima} de vida · {unidad.Ataque} de ataque",
             ];
@@ -306,6 +306,6 @@ internal class PantallaLaboratorio : PantallaModulo
 
     private sealed record RenglonUnidad(UnidadEscuadron Unidad)
     {
-        public override string ToString() => $"{Unidad.Nombre} · {Unidad.Clase}";
+        public override string ToString() => $"{Unidad.Nombre} · {NombresVisibles.De(Unidad.Clase)}";
     }
 }

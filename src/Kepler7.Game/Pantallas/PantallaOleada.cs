@@ -440,8 +440,8 @@ internal class PantallaOleada : Pantalla
             AccionPendiente.Atacar => $"{actor.Nombre}: elegí a qué enemigo atacar (en amarillo).",
             AccionPendiente.Curar => $"{actor.Nombre}: elegí a quién curar (en amarillo).",
             _ when !actor.PuedeAtacar && !actor.AtacaADistancia =>
-                $"{actor.Nombre} ({actor.Clase}) está atrás: cuerpo a cuerpo solo ataca desde adelante.{estado}",
-            _ => $"{actor.Nombre} ({actor.Clase}): elegí una acción. {TurnoUnidad.Para(actor, _oleada.Campo).Habilidad}{estado}",
+                $"{actor.Nombre} ({NombresVisibles.De(actor.Clase)}) está atrás: cuerpo a cuerpo solo ataca desde adelante.{estado}",
+            _ => $"{actor.Nombre} ({NombresVisibles.De(actor.Clase)}): elegí una acción. {TurnoUnidad.Para(actor, _oleada.Campo).Habilidad}{estado}",
         };
     }
 

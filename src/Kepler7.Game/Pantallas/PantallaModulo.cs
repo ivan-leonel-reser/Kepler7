@@ -20,7 +20,7 @@ internal class PantallaModulo : Pantalla
         var familia = CatalogoInsignias.Obtener(patron).Familia.ToString().ToUpperInvariant();
         var lblTitulo = Tema.CrearEtiqueta(titulo, Tema.Encabezado, Tema.Acento);
         lblTitulo.Location = new Point(20, 8);
-        var lblPatron = Tema.CrearEtiqueta($"PATRÓN {ModulosEstacion.NombrePatron(patron).ToUpperInvariant()} · {familia}", Tema.Chica, Tema.TextoTenue);
+        var lblPatron = Tema.CrearEtiqueta($"PATRÓN {NombresVisibles.De(patron).ToUpperInvariant()} · {familia}", Tema.Chica, Tema.TextoTenue);
         lblPatron.Location = new Point(22, 44);
         var lblDescripcion = Tema.CrearEtiqueta(descripcion, Tema.Normal, Tema.Texto);
         lblDescripcion.Location = new Point(22, 64);
