@@ -38,7 +38,7 @@ Hay tutorial, XP, niveles con desbloqueos, créditos, doce insignias (una por pa
 
 ## Instalar
 
-1. Descargar `Kepler7-Setup-1.0.0.exe` de la última versión desde [Releases](https://github.com/ivan-leonel-reser/Kepler7/releases).
+1. Descargar `Kepler7-Setup-1.1.0.exe` de la última versión desde [Releases](https://github.com/ivan-leonel-reser/Kepler7/releases).
 2. Ejecutarlo y seguir los pasos. Se instala para el usuario actual, sin permisos de administrador, y crea los accesos directos en el menú Inicio y en el escritorio.
 3. Abrir Kepler-7 desde el menú Inicio. No hace falta Visual Studio.
 

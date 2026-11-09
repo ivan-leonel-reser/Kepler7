@@ -5,7 +5,7 @@
 
 #define Nombre "Kepler-7: Protocolo Fénix"
 #define NombreCorto "Kepler-7"
-#define Version "1.0.0"
+#define Version "1.1.0"
 #define Ejecutable "Kepler7.Game.exe"
 #define Publicado "..\publicar"
 #define Manual "Manual de instalacion.pdf"
