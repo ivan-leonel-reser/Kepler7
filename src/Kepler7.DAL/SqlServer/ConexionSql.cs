@@ -48,6 +48,29 @@ public class ConexionSql
         }
     }
 
+    /// <summary>
+    /// Abre una conexión y corre el trabajo. Si SQL Server falla al conectar o en el medio de un comando,
+    /// sale siempre como <see cref="ErrorDePersistencia"/>: quien llama tiene una sola excepción que atrapar.
+    /// </summary>
+    public T Usar<T>(Func<SqlConnection, T> trabajo)
+    {
+        using var conexion = Abrir();
+        try
+        {
+            return trabajo(conexion);
+        }
+        catch (SqlException e)
+        {
+            throw new ErrorDePersistencia($"Falló una operación en la base {Base} de {Servidor}: {e.Message}", e);
+        }
+    }
+
+    public void Usar(Action<SqlConnection> trabajo) => Usar(conexion =>
+    {
+        trabajo(conexion);
+        return true;
+    });
+
     /// <summary>Entra por master y corre el script de creación. Si la base y las tablas ya están, no hace nada.</summary>
     public void AsegurarBase()
     {

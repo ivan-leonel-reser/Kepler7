@@ -13,9 +13,8 @@ public class RegistroAccesosSql : IRegistroAccesos
         _conexion = conexion;
     }
 
-    public void Registrar(IntentoAcceso intento)
+    public void Registrar(IntentoAcceso intento) => _conexion.Usar(conexion =>
     {
-        using var conexion = _conexion.Abrir();
         using var comando = new SqlCommand(
             "INSERT INTO dbo.IntentoAcceso (Fecha, Usuario, Rol, Operacion, IdArchivo) VALUES (@fecha, @usuario, @rol, @operacion, @archivo)",
             conexion);
@@ -25,16 +24,15 @@ public class RegistroAccesosSql : IRegistroAccesos
         comando.Parameters.AddWithValue("@operacion", intento.Operacion);
         comando.Parameters.AddWithValue("@archivo", intento.IdArchivo);
         comando.ExecuteNonQuery();
-    }
+    });
 
-    public IReadOnlyList<IntentoAcceso> ObtenerTodos()
+    public IReadOnlyList<IntentoAcceso> ObtenerTodos() => _conexion.Usar(conexion =>
     {
         var intentos = new List<IntentoAcceso>();
-        using var conexion = _conexion.Abrir();
         using var comando = new SqlCommand("SELECT Fecha, Usuario, Rol, Operacion, IdArchivo FROM dbo.IntentoAcceso ORDER BY Fecha, Id", conexion);
         using var lector = comando.ExecuteReader();
         while (lector.Read())
             intentos.Add(new IntentoAcceso(lector.GetDateTime(0), lector.GetString(1), lector.GetString(2), lector.GetString(3), lector.GetString(4)));
-        return intentos;
-    }
+        return (IReadOnlyList<IntentoAcceso>)intentos;
+    });
 }

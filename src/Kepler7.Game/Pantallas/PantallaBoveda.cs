@@ -140,7 +140,8 @@ internal class PantallaBoveda : PantallaModulo
             if (verbo == "leer")
                 _contenido.Clear();
             Veredicto("ACCESO DENEGADO", Tema.Peligro,
-                $"{e.Intento.Usuario} ({e.Intento.Rol}) no puede {verbo} '{archivo.Id}'. El intento quedó en el registro.");
+                $"{e.Intento.Usuario} ({e.Intento.Rol}) no puede {verbo} '{archivo.Id}'. " +
+                (e.Registrado ? "El intento quedó en el registro." : "El intento no quedó en el registro: la base no responde."));
         }
 
         RefrescarRegistro();
@@ -155,9 +156,20 @@ internal class PantallaBoveda : PantallaModulo
 
     private void RefrescarRegistro()
     {
-        var intentos = _boveda.IntentosDenegados;
         _registro.BeginUpdate();
         _registro.Items.Clear();
+        IReadOnlyList<IntentoAcceso> intentos;
+        try
+        {
+            intentos = _boveda.IntentosDenegados;
+        }
+        catch (Exception)
+        {
+            // La interfaz no conoce la capa de datos: cualquier falla al leer el registro se muestra en la lista.
+            _registro.Items.Add("No se pudo leer el registro: la base no responde.");
+            _registro.EndUpdate();
+            return;
+        }
         if (intentos.Count == 0)
             _registro.Items.Add("Sin intentos denegados.");
         foreach (var intento in intentos.OrderByDescending(i => i.Fecha))

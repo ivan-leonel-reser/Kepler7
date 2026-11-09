@@ -12,7 +12,7 @@ public record ResumenPartida(
     IReadOnlyList<Insignia> Insignias,
     int Transmisiones,
     int AccesosALaBoveda,
-    int IntentosDenegados,
+    int? IntentosDenegados,
     string? Recluta,
     string? Clon,
     IReadOnlyList<RegistroOleada> Oleadas);

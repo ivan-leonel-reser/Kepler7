@@ -49,4 +49,37 @@ public class PartidaGuardadoTests
         Assert.AreEqual(trasDerrota, repositorio.VecesGuardado);
         Assert.IsNull(repositorio.Guardado);
     }
+
+    [TestMethod]
+    public void SiLaBaseFallaAlBorrarLaPartidaNuevaArrancaIgual()
+    {
+        var partida = Partida.Nueva(new RepositorioQueFalla(), new AleatorioFijo(), new RegistroAccesosFalso(), new HistorialQueFalla());
+
+        Assert.IsFalse(partida.Terminada);
+        Assert.IsTrue(partida.Bitacora.Entradas.Any(e => e.Origen == "Guardado" && e.Mensaje.Contains("borrar")));
+    }
+
+    [TestMethod]
+    public void SiLaBaseFallaAlPerderLaPartidaTerminaYSeAnotaEnElHistorial()
+    {
+        var historial = new Kepler7.DAL.Memoria.HistorialPartidasEnMemoria();
+        var partida = new Partida(new RepositorioQueFalla(), new ProgresoJugador(), new AleatorioFijo(), new RegistroAccesosFalso(), historial);
+        foreach (var capa in partida.Armeria.Capas.ToList())
+            partida.Armeria.Quitar(capa);
+        partida.ControlCentral.IniciarTurno();
+        var oleada = partida.EmpezarOleada();
+        foreach (var unidad in partida.Escuadron)
+            unidad.PerderVida(unidad.Vida - 1);
+        while (!oleada.Terminada)
+        {
+            oleada.TerminarTurno();
+            oleada.JugarTurnoEnjambre();
+        }
+
+        var resultado = partida.CerrarOleada();
+
+        Assert.IsFalse(resultado.Victoria);
+        Assert.IsTrue(partida.Terminada);
+        Assert.HasCount(1, historial.Ultimas(10));
+    }
 }

@@ -115,8 +115,8 @@ public class Partida
     public static Partida Nueva(IRepositorioProgreso repositorio, IAleatorio aleatorio,
         IRegistroAccesos? registroAccesos = null, IHistorialPartidas? historial = null)
     {
-        repositorio.Borrar();
         var partida = new Partida(repositorio, new ProgresoJugador(), aleatorio, registroAccesos, historial);
+        partida.BorrarGuardada();
         partida.Bitacora.Registrar("Consejo", "El Enjambre va a atacar Kepler-7 en 6 oleadas. Prepará al escuadrón y defendé la estación.", TipoEntrada.Advertencia);
         partida.AvisarEstacionApagada();
         partida.Guardar();
@@ -148,6 +148,20 @@ public class Partida
         catch (ErrorDePersistencia e)
         {
             Bitacora.Registrar("Guardado", $"No se pudo guardar la partida: {e.Message}", TipoEntrada.Peligro);
+        }
+    }
+
+    // Igual que al guardar: si la base no responde se avisa y se sigue. La partida vieja puede quedar en la base
+    // hasta el próximo guardado, que la pisa.
+    private void BorrarGuardada()
+    {
+        try
+        {
+            _repositorio.Borrar();
+        }
+        catch (ErrorDePersistencia e)
+        {
+            Bitacora.Registrar("Guardado", $"No se pudo borrar la partida guardada: {e.Message}", TipoEntrada.Peligro);
         }
     }
 
@@ -253,9 +267,10 @@ public class Partida
             Bitacora.Registrar("Bóveda", $"{quien} pudo {nombre.ToLowerInvariant()} el archivo '{id}'.", TipoEntrada.Exito);
             return resultado;
         }
-        catch (AccesoDenegadoException)
+        catch (AccesoDenegadoException e)
         {
-            Bitacora.Registrar("Bóveda", $"Acceso denegado: {quien} intentó {nombre.ToLowerInvariant()} '{id}'. Quedó en el registro.", TipoEntrada.Peligro);
+            var registro = e.Registrado ? "Quedó en el registro." : "No quedó en el registro: la base no responde.";
+            Bitacora.Registrar("Bóveda", $"Acceso denegado: {quien} intentó {nombre.ToLowerInvariant()} '{id}'. {registro}", TipoEntrada.Peligro);
             throw;
         }
     }
@@ -386,7 +401,7 @@ public class Partida
             var apagado = ControlCentral.ApagarEstacion();
             Bitacora.Registrar("Oleada", $"El escuadrón cayó en la oleada {oleada.Numero}. Kepler-7 se apaga.", TipoEntrada.Peligro);
             Terminada = true;
-            _repositorio.Borrar();
+            BorrarGuardada();
             _oleadasJugadas.Add(Registrar(oleada, 0, 0));
             AnotarEnHistorial();
             return new ResultadoOleada(false, 0, 0, false, apagado);
@@ -491,7 +506,7 @@ public class Partida
         Progreso.Insignias.Select(CatalogoInsignias.Obtener).ToList(),
         _transmisiones.Count,
         Boveda.AccesosConcedidos,
-        Boveda.IntentosDenegados.Count,
+        ContarIntentosDenegados(),
         Recluta?.Nombre,
         Clon?.Nombre,
         _oleadasJugadas.ToList());
@@ -513,6 +528,19 @@ public class Partida
             oleada.HackeosRealizados,
             xp,
             creditos);
+    }
+
+    // null si el registro de la bóveda no se puede leer: la pantalla final lo dice en vez de mostrar un cero.
+    private int? ContarIntentosDenegados()
+    {
+        try
+        {
+            return Boveda.IntentosDenegados.Count;
+        }
+        catch (ErrorDePersistencia)
+        {
+            return null;
+        }
     }
 
     // Se anota una sola vez, cuando la partida termina. Si la base falla, queda el aviso y se sigue.

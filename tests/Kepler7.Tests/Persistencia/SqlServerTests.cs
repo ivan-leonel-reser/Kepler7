@@ -129,6 +129,17 @@ public class SqlServerTests
     }
 
     [TestMethod]
+    public void UnComandoQueFallaYaConectadoTambienAvisaConUnErrorDePersistencia()
+    {
+        // TOP con un número negativo lo rechaza SQL Server después de conectar.
+        var historial = new HistorialPartidasSql(Conexion);
+
+        var error = Assert.ThrowsExactly<ErrorDePersistencia>(() => historial.Ultimas(-1));
+
+        Assert.IsInstanceOfType<SqlException>(error.InnerException);
+    }
+
+    [TestMethod]
     public void UnServidorInexistenteAvisaConUnErrorDePersistencia()
     {
         var conexion = new ConexionSql("Server=np:\\\\.\\pipe\\no-existe\\sql\\query;Database=Kepler7;Integrated Security=true;TrustServerCertificate=true;Connect Timeout=1");

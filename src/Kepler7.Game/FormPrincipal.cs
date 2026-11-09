@@ -53,9 +53,18 @@ public partial class FormPrincipal : Form
 
     internal void MostrarTutorial(Action alTerminar) => Mostrar(new PantallaTutorial(this, alTerminar));
 
+    // Si la base se cayó entre que se habilitó "Continuar" y el clic, se avisa y se queda en el inicio.
     internal void ContinuarPartida()
     {
-        PartidaActual = Partida.Continuar(_repositorio, new Aleatorio());
+        try
+        {
+            PartidaActual = Partida.Continuar(_repositorio, new Aleatorio());
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"No se pudo cargar la partida guardada.\n{e.Message}", InfoJuego.Titulo, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
         IrAEstacion();
     }
 

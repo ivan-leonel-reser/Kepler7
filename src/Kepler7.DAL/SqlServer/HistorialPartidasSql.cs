@@ -13,9 +13,8 @@ public class HistorialPartidasSql : IHistorialPartidas
         _conexion = conexion;
     }
 
-    public void Registrar(PartidaJugada partida)
+    public void Registrar(PartidaJugada partida) => _conexion.Usar(conexion =>
     {
-        using var conexion = _conexion.Abrir();
         using var comando = new SqlCommand(
             "INSERT INTO dbo.PartidaJugada (Fecha, EstacionSalvada, OleadasSuperadas, Nivel, Xp, Insignias) " +
             "VALUES (@fecha, @salvada, @oleadas, @nivel, @xp, @insignias)",
@@ -27,12 +26,11 @@ public class HistorialPartidasSql : IHistorialPartidas
         comando.Parameters.AddWithValue("@xp", partida.Xp);
         comando.Parameters.AddWithValue("@insignias", partida.Insignias);
         comando.ExecuteNonQuery();
-    }
+    });
 
-    public IReadOnlyList<PartidaJugada> Ultimas(int cantidad)
+    public IReadOnlyList<PartidaJugada> Ultimas(int cantidad) => _conexion.Usar(conexion =>
     {
         var partidas = new List<PartidaJugada>();
-        using var conexion = _conexion.Abrir();
         using var comando = new SqlCommand(
             "SELECT TOP (@cantidad) Fecha, EstacionSalvada, OleadasSuperadas, Nivel, Xp, Insignias " +
             "FROM dbo.PartidaJugada ORDER BY Fecha DESC, Id DESC",
@@ -41,6 +39,6 @@ public class HistorialPartidasSql : IHistorialPartidas
         using var lector = comando.ExecuteReader();
         while (lector.Read())
             partidas.Add(new PartidaJugada(lector.GetDateTime(0), lector.GetBoolean(1), lector.GetInt32(2), lector.GetInt32(3), lector.GetInt32(4), lector.GetInt32(5)));
-        return partidas;
-    }
+        return (IReadOnlyList<PartidaJugada>)partidas;
+    });
 }
