@@ -488,7 +488,7 @@ public class Partida
         Progreso.GanarCreditos(CreditosPorInsignia);
         var subioNivel = Progreso.GanarXp(XpPorInsignia);
 
-        Bitacora.Registrar("Logros", $"Insignia desbloqueada: {insignia.Nombre} ({patron}).", TipoEntrada.Exito);
+        Bitacora.Registrar("Logros", $"Insignia desbloqueada: {insignia.Nombre} ({NombresVisibles.De(patron)}).", TipoEntrada.Exito);
         if (subioNivel)
             AvisarNivel();
 

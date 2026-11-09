@@ -20,12 +20,14 @@ internal class PantallaTutorial : Pantalla
     private readonly Button _anterior = Tema.CrearBoton("Anterior", 160);
     private readonly Button _siguiente = Tema.CrearBoton("Siguiente", 160);
     private readonly Button _saltar = Tema.CrearBoton("Saltar", 160);
+    private readonly string _textoFinal;
     private int _pagina;
 
-    public PantallaTutorial(FormPrincipal principal, Action alTerminar) : base(principal)
+    public PantallaTutorial(FormPrincipal principal, Action alTerminar, string textoFinal = "Empezar") : base(principal)
     {
         ConCielo = true;
         _alTerminar = alTerminar;
+        _textoFinal = textoFinal;
 
         _titulo.Margin = new Padding(3, 0, 3, 14);
         var botones = new FlowLayoutPanel { AutoSize = true, Margin = new Padding(0, 20, 0, 0), BackColor = Color.Transparent };
@@ -77,7 +79,7 @@ internal class PantallaTutorial : Pantalla
         _parrafos.ResumeLayout();
 
         _anterior.Enabled = _pagina > 0;
-        _siguiente.Text = _pagina == Tutorial.Paginas.Count - 1 ? "Empezar" : "Siguiente";
+        _siguiente.Text = _pagina == Tutorial.Paginas.Count - 1 ? _textoFinal : "Siguiente";
         _saltar.Visible = _pagina < Tutorial.Paginas.Count - 1;
     }
 

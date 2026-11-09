@@ -110,7 +110,7 @@ internal class PantallaLaboratorio : PantallaModulo
 
     private Control ArmarConsola()
     {
-        var zona = new Panel { Dock = DockStyle.Bottom, Height = 112, Padding = new Padding(0, 6, 0, 0) };
+        var zona = new Panel { Dock = DockStyle.Bottom, Height = 84, Padding = new Padding(0, 6, 0, 0) };
         zona.Controls.Add(_consola);
         return zona;
     }
@@ -204,7 +204,7 @@ internal class PantallaLaboratorio : PantallaModulo
             :
             [
                 soldado.Nombre,
-                soldado.Clase.ToString(),
+                NombresVisibles.De(soldado.Clase),
                 soldado.Especie?.Nombre ?? "No figura en el censo",
                 $"{unidad.VidaMaxima} de vida · {unidad.Ataque} de ataque",
             ];
@@ -306,6 +306,6 @@ internal class PantallaLaboratorio : PantallaModulo
 
     private sealed record RenglonUnidad(UnidadEscuadron Unidad)
     {
-        public override string ToString() => $"{Unidad.Nombre} · {Unidad.Clase}";
+        public override string ToString() => $"{Unidad.Nombre} · {NombresVisibles.De(Unidad.Clase)}";
     }
 }

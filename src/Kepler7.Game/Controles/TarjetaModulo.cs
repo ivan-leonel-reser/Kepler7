@@ -1,3 +1,5 @@
+using Kepler7.Core.Juego;
+
 namespace Kepler7.Game.Controles;
 
 /// <summary>Botón grande del puente de mando para entrar a un módulo.</summary>
@@ -55,7 +57,7 @@ internal class TarjetaModulo : Control
 
         var colorTexto = disponible ? Tema.Texto : Tema.TextoTenue;
         TextRenderer.DrawText(g, _modulo.Nombre, Tema.Encabezado, new Point(14, 12), colorTexto);
-        TextRenderer.DrawText(g, ModulosEstacion.NombrePatron(_modulo.Patron).ToUpperInvariant(), Tema.Chica,
+        TextRenderer.DrawText(g, NombresVisibles.De(_modulo.Patron).ToUpperInvariant(), Tema.Chica,
             new Point(16, 46), disponible ? Tema.Acento : Tema.TextoTenue);
         TextRenderer.DrawText(g, _modulo.Descripcion, Tema.Normal,
             new Rectangle(16, 70, Width - 32, Height - 100), Tema.TextoTenue, TextFormatFlags.WordBreak);

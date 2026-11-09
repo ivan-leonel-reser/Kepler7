@@ -1,4 +1,5 @@
 using Kepler7.BE;
+using Kepler7.Core.Juego;
 using Kepler7.Core.Progreso;
 
 namespace Kepler7.Game.Controles;
@@ -32,12 +33,17 @@ internal class TarjetaInsignia : Control
         using (var borde = new Pen(_obtenida ? Tema.Exito : Tema.Borde, _obtenida ? 2 : 1))
             g.DrawRectangle(borde, area);
 
-        TextRenderer.DrawText(g, _insignia.Nombre, Tema.Negrita, new Rectangle(14, 12, Width - 28, 24),
+        TextRenderer.DrawText(g, _insignia.Nombre, Tema.Negrita, new Rectangle(14, 10, Width - 28, 20),
             _obtenida ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
-        TextRenderer.DrawText(g, $"{ModulosEstacion.NombrePatron(_insignia.Patron).ToUpperInvariant()} · {_insignia.Familia.ToString().ToUpperInvariant()}",
-            Tema.Chica, new Rectangle(16, 38, Width - 32, 16), _obtenida ? Tema.Acento : Tema.TextoTenue, TextFormatFlags.EndEllipsis);
+        // Patrón y familia van en dos renglones: en uno solo, los nombres largos no entran en la tarjeta.
+        TextRenderer.DrawText(g, NombresVisibles.De(_insignia.Patron).ToUpperInvariant(),
+            Tema.Chica, new Rectangle(16, 31, Width - 32, 16), _obtenida ? Tema.Acento : Tema.TextoTenue, TextFormatFlags.EndEllipsis);
+        TextRenderer.DrawText(g, _insignia.Familia.ToString().ToUpperInvariant(),
+            Tema.Chica, new Rectangle(16, 46, Width - 32, 16), Tema.TextoTenue, TextFormatFlags.EndEllipsis);
+        // TextBoxControl: si la tarjeta es baja, no deja un renglón cortado por la mitad.
         TextRenderer.DrawText(g, _insignia.Descripcion, Tema.Normal,
-            new Rectangle(16, 60, Width - 32, Height - 104), _obtenida ? Tema.Texto : Tema.TextoTenue, TextFormatFlags.WordBreak);
+            new Rectangle(16, 66, Width - 32, Height - 66 - (_obtenida ? 34 : 58)), _obtenida ? Tema.Texto : Tema.TextoTenue,
+            TextFormatFlags.WordBreak | TextFormatFlags.TextBoxControl);
 
         if (!_obtenida)
             DibujarAvance(g);

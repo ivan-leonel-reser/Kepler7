@@ -19,9 +19,14 @@ public partial class FormPrincipal : Form
 
         Text = InfoJuego.Titulo;
         ClientSize = new Size(1180, 740);
-        MinimumSize = new Size(1100, 750);
+        MinimumSize = new Size(Width, 700);
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Tema.Fondo;
+
+        // En una pantalla de 1366x768 la ventana no entra: arranca maximizada para que no queden botones tapados.
+        var disponible = Screen.FromPoint(Cursor.Position).WorkingArea;
+        if (Width > disponible.Width || Height > disponible.Height)
+            WindowState = FormWindowState.Maximized;
 
         Mostrar(new PantallaInicio(this));
     }
@@ -51,7 +56,8 @@ public partial class FormPrincipal : Form
         MostrarTutorial(IrAEstacion);
     }
 
-    internal void MostrarTutorial(Action alTerminar) => Mostrar(new PantallaTutorial(this, alTerminar));
+    internal void MostrarTutorial(Action alTerminar, string textoFinal = "Empezar") =>
+        Mostrar(new PantallaTutorial(this, alTerminar, textoFinal));
 
     // Si la base se cayó entre que se habilitó "Continuar" y el clic, se avisa y se queda en el inicio.
     internal void ContinuarPartida()
