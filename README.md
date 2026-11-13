@@ -33,7 +33,7 @@ Hay tutorial, XP, niveles con desbloqueos, créditos, doce insignias (una por pa
 
 - Windows 10/11
 - Para jugar: [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Para compilar: .NET 8 SDK (o superior)
+- Para compilar: .NET 8 SDK o superior. Visual Studio 2022 abre la solución con el SDK 8 o 9; el SDK 10 necesita Visual Studio 2026
 - SQL Server LocalDB (viene con Visual Studio) o SQL Server Express, para guardar el progreso. Sin servidor el juego funciona igual, con el progreso en memoria
 
 ## Instalar
